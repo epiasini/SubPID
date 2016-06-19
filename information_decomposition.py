@@ -149,6 +149,13 @@ def decomposition(P, npoints=100):
     npoints: the number of points to consider on each side of the mesh
     grid we will use to optimise the coinformation over $\Delta_P$.
 
+    Returns
+    -------
+    SI : shared information SI(X:Y;Z)
+    CI : complementary information CI(X:Y;Z)
+    UI_Y : unique information UI(X:Y\Z)
+    UI_Z : unique information UI(X:Z\Y)
+
     Examples
     --------
     >>> # PID for y and z being uniformly distributed and x=AND(y,z):
@@ -173,8 +180,10 @@ def decomposition(P, npoints=100):
     assert all(np.logical_and(P.flat>=0, P.flat<=1)) and P.sum()==1
 
     P = P.flat[:]
-    # shared information SI is the maximum of the coinformation over a 
+    # shared information SI is the maximum of the coinformation over
+    # $\Delta_P$
     SI = coinformation_table(P, npoints).max()
+    # the other terms of the decomposition follow from the SI
     UI_Y = I_Q_XY(P, axis=2) - SI
     UI_Z = I_Q_XY(P, axis=1) - SI
     CI = I_XYZ(P) - SI - UI_Y - UI_Z
