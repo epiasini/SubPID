@@ -177,7 +177,7 @@ def decomposition(P, npoints=100):
     # over binary variables
     P = P.astype(np.float) 
     assert P.shape == (2,2,2)
-    assert all(np.logical_and(P.flat>=0, P.flat<=1)) and P.sum()==1
+    assert all(np.logical_and(P.flat>=0, P.flat<=1)) and np.isclose(P.sum(), 1)
 
     P = P.flat[:]
     # shared information SI is the maximum of the coinformation over
