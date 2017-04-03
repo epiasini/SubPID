@@ -1,8 +1,8 @@
-function [I_shar,I_syn,I_unx,I_uny,q_opt]=intersection_information_final(dimx,dimy,dimz,p,accuracy,method)
+function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,method)
 
 %inputs: discrete 3-variate probability distribution p, its dimensions dimx, dimy, dimz, an upper bound on the desired accuracy of the outputs (in bit)
 %method: - 'cvx' if you want to use cvx - more reliable numerical result but much slower
-         - 'linprog' if you want to use the matlab function linprog - less reliable numerical result (in high dimensions) but faster
+         %- 'linprog' if you want to use the matlab function linprog - less reliable numerical result (in high dimensions) but faster
 %outputs: the 4 PID atoms of I_shar (redundancy SI(Z:{X;Y})), I_unx (UI(Z:X\Y)), I_uny (UI(Z:Y\X)), I_syn (synergy CI(Z:{X;Y})). Thus, Z is the target and X, Y are the sources.
 
 close all
@@ -13,7 +13,7 @@ tic
 %basis=zeros(dimx,dimy,dimz);%set the matrix dimensions of the GAMMA matrices
 
 GAMMA=zeros(dimx,dimy,dimz,dimx-1,dimy-1,dimz); % this is the concatenation of all the (dimx-1)*(dimy-1)*(dimz) Gamma matrices defined in Bertschinger2013, each of which has
-                                                  the same dimensions (dimx, dimy, dimz) as the input p.
+                                                  %the same dimensions (dimx, dimy, dimz) as the input p.
 
 for zz=1:dimz
     for xx=1:dimx-1    
@@ -267,7 +267,7 @@ while check==0 % iteration loop
                 deriv_zz=deriv_zz(:)';
                 
 
-                if method='cvx'
+                if isequal(method,'cvx')
 
                     cvx_begin quiet
                     cvx_precision(0.0001) %low
@@ -278,7 +278,7 @@ while check==0 % iteration loop
                     A*coeff <= b
                     cvx_end
 
-                    elseif method='linprog'
+                    elseif isequal(method,'linprog')
 
                     problem.f=deriv_zz;
                     problem.Aineq=A;
