@@ -314,7 +314,7 @@ while check==0 % iteration loop
        deriv=deriv(:)';
         
     %set the stopping criterion based on the duality gap, see Stratos;
-    if iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
+    if iter>0 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
 
         check=1; %exit the algorithm
         q_opt=q; % output the optimal distribution
