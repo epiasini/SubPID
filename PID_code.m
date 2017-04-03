@@ -269,19 +269,31 @@ while check==0 % iteration loop
 
                 if method='cvx'
 
-                cvx_begin quiet
-                cvx_precision(0.0001) %low
+                    cvx_begin quiet
+                    cvx_precision(0.0001) %low
 
-                variable coeff(ceil((dimx-1)*(dimy-1)))
-                minimize( deriv_zz*coeff )
-                subject to
-                A*coeff <= b
-                cvx_end
+                    variable coeff(ceil((dimx-1)*(dimy-1)))
+                    minimize( deriv_zz*coeff )
+                    subject to
+                    A*coeff <= b
+                    cvx_end
 
-                elseif method='linprog'
+                    elseif method='linprog'
 
+                    problem.f=deriv_zz;
+                    problem.Aineq=A;
+                    problem.bineq=b;
+                    problem.aeq=[];
+                    problem.beq=[];
+                    problem.ub=[];
+                    problem.lb=[];
+                    problem.x0=0;
+                    problem.solver='linprog';
+                    problem.options = optimoptions('linprog','Display','off','OptimalityTolerance',accuracy/10^5,'MaxIterations',10^20);
+                    %The default method is 'interior-point'
+                    %'Algorithm','dual-simplex') gives wrong results with naive use
 
-
+                    coeff=linprog(problem);
 
                 end
 
