@@ -2,6 +2,9 @@ function dice_example
 
 
 aa=1;
+lambdastep=.05;
+lambda=0;
+
 
 I_shar=zeros(1,ceil(1/lambdastep)+1);
 I_unx=zeros(1,ceil(1/lambdastep)+1);
@@ -17,21 +20,22 @@ IRSI_x_y_z=zeros(1,ceil(1/lambdastep)+1);
 
 %Y and Z are the dice, X is the weighted sum of the two
 
-
 % summed-dice dimensions
   dimy=6;
   dimz=6;
 % 
  alpha=1; % relative ratio between the sum coefficients for summing the dice
 % 
+
+% X is the target
   dimx=ceil(dimy+dimz*alpha-1-alpha)+1;
 % 
 %
 
-%make X the new target
-dimx_x=dimz;%
-dimy_x=dimy;%
-dimz_x=dimx;
+%use if Z is the new target
+dimx_z=dimz;%
+dimy_z=dimy;%
+dimz_z=dimx;
 
 
 while aa<=ceil(1/lambdastep)+1 % loop over different correlations between the dice
@@ -39,7 +43,7 @@ while aa<=ceil(1/lambdastep)+1 % loop over different correlations between the di
     % setting correlations between the dice
     for yy=1:dimy
         for zz=1:dimz
-            p_yz(yy,zz)=lambda/36+(1-lambda)/6*(xx==yy);
+            p_yz(yy,zz)=lambda/36+(1-lambda)/6*(yy==zz);
         end
     end
 
