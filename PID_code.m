@@ -10,15 +10,12 @@ close all
 tic
 
 
-%basis=zeros(dimx,dimy,dimz);%set the matrix dimensions of the GAMMA matrices
-
 GAMMA=zeros(dimx,dimy,dimz,dimx-1,dimy-1,dimz); % this is the concatenation of all the (dimx-1)*(dimy-1)*(dimz) Gamma matrices defined in Bertschinger2013, each of which has
                                                   %the same dimensions (dimx, dimy, dimz) as the input p.
 
 for zz=1:dimz
     for xx=1:dimx-1    
         for yy=1:dimy-1
-        %GAMMA(:,:,:,xx,yy,zz)=basis;
         GAMMA(xx,yy,zz,xx,yy,zz) = 1;
         GAMMA(xx+1,yy,zz,xx,yy,zz) = -1;
         GAMMA(xx,yy+1,zz,xx,yy,zz) = -1;
@@ -36,81 +33,73 @@ iter=0; % counts the iterations of the algorithm
 
 q=p; % the starting point of the algorithm is trivially set to the input p. I have tried smarter starting points but it seems the algorithm does not improve.
 
-%build q
-%for ind_gamma=1:ceil(dimz*(dimx-1)*(dimy-1))
-           
-%xx=mod(ceil(ind_gamma/(dimy-1))-1,(dimx-1))+1;
-%yy=mod(ind_gamma-1,dimy-1)+1;
-%zz=ceil(ind_gamma/((dimx-1)*(dimy-1)));
-            
-%q=q+parameters(1,ind_gamma).*GAMMA(:,:,:,xx,yy,zz);
-
-%end
-
 coeff_prev=parameters';% when iter=0, the coefficients of the iteration -1 are trivially set equal to zero too.
         
 co_I=[];% vector of the coinformation coI_q(X;Y;Z)
 
-%S_t=parameters';
- 
 while check==0 % iteration loop
  
       q(q<0)=0;% eliminate tiny negative entries in q which result from the limited numerical precision
         
-      I_xy=0;% I_q(X:Y)
-        for i=1:dimx%x
-            for k=1:dimy%y
+      %I_xy=0;% I_q(X:Y)
+      %  for i=1:dimx%x
+      %      for k=1:dimy%y
        
-                if sum(q(i,k,:))>0
-                    I_xy=I_xy+sum(q(i,k,:))*log2(sum(q(i,k,:))/(sum(sum(q(:,k,:)))*sum(sum(q(i,:,:)))));
-                end
+      %          if sum(q(i,k,:))>0
+      %              I_xy=I_xy+sum(q(i,k,:))*log2(sum(q(i,k,:))/(sum(sum(q(:,k,:)))*sum(sum(q(i,:,:)))));
+      %          end
         
-            end
-        end         
+      %      end
+      %  end
         
-      I_cond_xy_z=0;% I_q(X:Y|Z)
-        for i=1:dimx%x
-           for k=1:dimy%y
-             for j=1:dimz%z
+        %I_q(X:Y)
+    q12 = sum(q, 3);
+    I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
+    I_xy = sum(I_xy(q12 > 0));
+        
+        
+    % I_cond_xy_z=0;% I_q(X:Y|Z)
+     %   for i=1:dimx%x
+      %     for k=1:dimy%y
+       %      for j=1:dimz%z
 
-                if q(i,k,j)>0
-                   I_cond_xy_z=I_cond_xy_z+q(i,k,j)*log2(q(i,k,j)/sum(sum(q(:,:,j)))/(sum(q(i,:,j))/sum(sum(q(:,:,j)))*sum(q(:,k,j))/sum(sum(q(:,:,j)))));
-                end
+        %        if q(i,k,j)>0
+         %          I_cond_xy_z=I_cond_xy_z+q(i,k,j)*log2(q(i,k,j)/sum(sum(q(:,:,j)))/(sum(q(i,:,j))/sum(sum(q(:,:,j)))*sum(q(:,k,j))/sum(sum(q(:,:,j)))));
+          %      end
 
-             end
-           end
-        end
+         %    end
+         %  end
+       % end
 
+%       I_q(X:Y|Z)
+    I_cond_xy_z = q .* log2(q ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ./ ...
+                   ( repmat(sum(q,2), [1 dimy 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) .* ...
+                     repmat(sum(q),   [dimx 1 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ) );
+    I_cond_xy_z = sum(I_cond_xy_z(q > 0));
 
      co_I=[co_I;I_xy-I_cond_xy_z]; % update coI_q
         
 
     %Franke-Wolf optimization algorithm
     %1) determine search direction
+   
+    %calculating the gradient: we have an analytical expression of the gradient of the object function
 
-    I_zy_x=0; % I_q(Z:Y|X), which is the function minimized by q_opt, the final q which should be found by the algorithm
-        for i=1:dimx%x
-           for k=1:dimy%y
-             for j=1:dimz%z
-                if q(i,k,j)>0
-                   I_zy_x=I_zy_x+q(i,k,j)*log2(q(i,k,j)/(sum(sum(q(:,:,j)))*sum(q(i,k,:))));
-                end
-             end
-           end
-        end
+    %deriv=zeros(dimx-1,dimy-1,dimz);
 
-%calculating the gradient: we have an analytical expression of the gradient of the object function
+    %for zz=1:dimz
+     %   for xx=1:dimx-1
+      %      for yy=1:dimy-1
+       %         deriv(xx,yy,zz)=log2(q(xx,yy,zz)*q(xx+1,yy+1,zz))-log2(q(xx,yy+1,zz)*q(xx+1,yy,zz))+log2(sum(q(xx,yy+1,:)).*sum(q(xx+1,yy,:)))-log2(sum(q(xx,yy,:)).*sum(q(xx+1,yy+1,:)));
+        %    end
+       % end
+    %end
 
-    deriv=zeros(dimx-1,dimy-1,dimz);
-
-    for zz=1:dimz
-        for xx=1:dimx-1
-            for yy=1:dimy-1
-                deriv(xx,yy,zz)=log2(q(xx,yy,zz)*q(xx+1,yy+1,zz))-log2(q(xx,yy+1,zz)*q(xx+1,yy,zz))+log2(sum(q(xx,yy+1,:)).*sum(q(xx+1,yy,:)))-log2(sum(q(xx,yy,:)).*sum(q(xx+1,yy+1,:)));
-            end
-        end
-    end
-
+    deriv = log2(q(1:dimx-1,1:dimy-1,:) .* q(2:dimx,2:dimy,:)) - ...
+            log2(q(1:dimx-1,2:dimy,:) .* q(2:dimx,1:dimy-1,:)) + ...
+            log2( repmat(sum(q(1:dimx-1,2:dimy,:), 3), [1 1 dimz]) .* repmat(sum(q(2:dimx,1:dimy-1,:), 3), [1 1 dimz]) ) - ...
+            log2( repmat(sum(q(1:dimx-1,1:dimy-1,:), 3), [1 1 dimz]) .* repmat(sum(q(2:dimx,2:dimy,:), 3), [1 1 dimz]) );
+    
     %get rid of nonsense values of deriv coming from finite numerical precision
     deriv(isnan(deriv))=0;
     deriv(isinf(deriv))=0;
@@ -301,6 +290,14 @@ while check==0 % iteration loop
 
     end
            
+    %if linprog doesn't find the final solution with the desired accuracy,
+    %quit the algorithm and set the output q_opt=0.
+    if size(coeff_tot,1)<ceil(dimz*(dimx-1)*(dimy-1))
+        coeff_tot=coeff_prev;
+        q=0;
+        keyboard
+    end
+    
     p_k=p;
 
     for ind_gamma=1:ceil(dimz*(dimx-1)*(dimy-1))
@@ -317,7 +314,7 @@ while check==0 % iteration loop
        deriv=deriv(:)';
         
     %set the stopping criterion based on the duality gap, see Stratos;
-    if (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
+    if iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
 
         check=1; %exit the algorithm
         q_opt=q; % output the optimal distribution
