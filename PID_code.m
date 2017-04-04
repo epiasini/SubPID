@@ -1,11 +1,11 @@
-function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,method)
+function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,method,lin_accuracy)
 
 %inputs: discrete 3-variate probability distribution p, its dimensions dimx, dimy, dimz, an upper bound on the desired accuracy of the outputs (in bit)
 %method: - 'cvx' if you want to use cvx - more reliable numerical result but much slower
          %- 'linprog' if you want to use the matlab function linprog - less reliable numerical result (in high dimensions) but faster
 %outputs: the 4 PID atoms of I_shar (redundancy SI(Z:{X;Y})), I_unx (UI(Z:X\Y)), I_uny (UI(Z:Y\X)), I_syn (synergy CI(Z:{X;Y})). Thus, Z is the target and X, Y are the sources.
 
-close all
+%close all
 
 tic
 
@@ -35,50 +35,27 @@ q=p; % the starting point of the algorithm is trivially set to the input p. I ha
 
 coeff_prev=parameters';% when iter=0, the coefficients of the iteration -1 are trivially set equal to zero too.
         
-co_I=[];% vector of the coinformation coI_q(X;Y;Z)
+%co_I=[];% vector of the coinformation coI_q(X;Y;Z)
 
+%coeff_tot_prev=zeros(ceil(dimz*(dimx-1)*(dimy-1)),1);% to use as a starting point for next linear optimization
+                    
 while check==0 % iteration loop
  
       q(q<0)=0;% eliminate tiny negative entries in q which result from the limited numerical precision
-        
-      %I_xy=0;% I_q(X:Y)
-      %  for i=1:dimx%x
-      %      for k=1:dimy%y
-       
-      %          if sum(q(i,k,:))>0
-      %              I_xy=I_xy+sum(q(i,k,:))*log2(sum(q(i,k,:))/(sum(sum(q(:,k,:)))*sum(sum(q(i,:,:)))));
-      %          end
-        
-      %      end
-      %  end
         
         %I_q(X:Y)
     q12 = sum(q, 3);
     I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
     I_xy = sum(I_xy(q12 > 0));
         
-        
-    % I_cond_xy_z=0;% I_q(X:Y|Z)
-     %   for i=1:dimx%x
-      %     for k=1:dimy%y
-       %      for j=1:dimz%z
-
-        %        if q(i,k,j)>0
-         %          I_cond_xy_z=I_cond_xy_z+q(i,k,j)*log2(q(i,k,j)/sum(sum(q(:,:,j)))/(sum(q(i,:,j))/sum(sum(q(:,:,j)))*sum(q(:,k,j))/sum(sum(q(:,:,j)))));
-          %      end
-
-         %    end
-         %  end
-       % end
-
 %       I_q(X:Y|Z)
     I_cond_xy_z = q .* log2(q ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ./ ...
                    ( repmat(sum(q,2), [1 dimy 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) .* ...
                      repmat(sum(q),   [dimx 1 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ) );
     I_cond_xy_z = sum(I_cond_xy_z(q > 0));
 
-     co_I=[co_I;I_xy-I_cond_xy_z]; % update coI_q
-        
+     %co_I=[co_I;I_xy-I_cond_xy_z]; % update coI_q
+      co_I=  I_xy-I_cond_xy_z;%to make it faster
 
     %Franke-Wolf optimization algorithm
     %1) determine search direction
@@ -105,9 +82,10 @@ while check==0 % iteration loop
     deriv(isinf(deriv))=0;
 
     %stores the coefficients of the q of the current iteration. For each value of z there is a coeff, then coeff_tot concatenates all coeffs.
-    coeff_tot=[];
-
+    coeff_tot=zeros(ceil((dimx-1)*(dimy-1)),dimz);
+    
     %the optimization can be formally divided into dimz optimizations, one for each value of the variable Z. This loop could thus be parallelized
+    %par
     for zz=1:dimz
 
         %the constraints on q, for each z, are implemented via the inequality A*coeff<=b
@@ -250,8 +228,12 @@ while check==0 % iteration loop
 
             end
         end
+        
+        %    problem = repmat( struct('f',deriv_zz, 'Aineq',A, 'bineq',b, 'aeq',[],'beq',[],'ub',[],'lb',[],'x0',0,'solver','linprog','options',optimoptions('linprog','Display','off','OptimalityTolerance',lin_accuracy,'MaxIterations',10^5)), 1, dimz);
+    
 
-                %extract the portion of deriv pertaining to zz and adapt deriv_zz to the multiplication deriv_zz*coeff
+        
+        %extract the portion of deriv pertaining to zz and adapt deriv_zz to the multiplication deriv_zz*coeff
                 deriv_zz=permute(deriv(:,:,zz),[2 1 3]);
                 deriv_zz=deriv_zz(:)';
                 
@@ -259,7 +241,7 @@ while check==0 % iteration loop
                 if isequal(method,'cvx')
 
                     cvx_begin quiet
-                    cvx_precision(0.0001) %low
+                    cvx_precision(lin_accuracy) %low
 
                     variable coeff(ceil((dimx-1)*(dimy-1)))
                     minimize( deriv_zz*coeff )
@@ -267,8 +249,10 @@ while check==0 % iteration loop
                     A*coeff <= b
                     cvx_end
 
-                    elseif isequal(method,'linprog')
-
+                    elseif isequal(method,'linprog')    
+                        
+                    %problem = struct();%use with parfor
+                        
                     problem.f=deriv_zz;
                     problem.Aineq=A;
                     problem.bineq=b;
@@ -276,20 +260,37 @@ while check==0 % iteration loop
                     problem.beq=[];
                     problem.ub=[];
                     problem.lb=[];
-                    problem.x0=0;
+                    
+                    problem.x0=0;%coeff_tot_prev(ceil((zz-1)*(dimx-1)*(dimy-1))+1:ceil((zz-1)*(dimx-1)*(dimy-1))+dimx-1+dimy-1-1,1);
                     problem.solver='linprog';
-                    problem.options = optimoptions('linprog','Display','off','OptimalityTolerance',accuracy/10^5,'MaxIterations',10^20);
+                    problem.options = optimoptions('linprog','Display','off','OptimalityTolerance',lin_accuracy);
+                    %MaxIterations should be left as it is, otherwise the
+                    %algorithms are not accurate
                     %The default method is 'interior-point'
                     %'Algorithm','dual-simplex') gives wrong results with naive use
+                    % 'sqp'
+                    % 'active-set'
 
                     coeff=linprog(problem);
+                    
+                    elseif isequal(method,'glpk') 
+                                                                        
+                        %param.dual=1;
+                        param.lpsolver=2;
+                    coeff = glpk (deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
 
+                    elseif isequal(method,'lpsolve')
+                        
+                    coeff = lp_solve(deriv_zz,A,b,repmat(-1,1,length(b)),repmat(-1,1,length(deriv_zz)));%,vlb,vub,xint,scalemode,keep)    
+                    
                 end
 
-                coeff_tot=[coeff_tot;coeff];% update coeff_tot with the coeff from the current zz
+                coeff_tot(:,zz)=coeff;% update coeff_tot with the coeff from the current zz
 
     end
            
+    coeff_tot=coeff_tot(:);
+    
     %if linprog doesn't find the final solution with the desired accuracy,
     %quit the algorithm and set the output q_opt=0.
     if size(coeff_tot,1)<ceil(dimz*(dimx-1)*(dimy-1))
@@ -327,7 +328,7 @@ while check==0 % iteration loop
 
         coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  % update coeff_prev for next iteration
 
-
+        %coeff_tot_prev=coeff_tot;
 % first alternative Franke-Wolf increment: line search. Pretty primitive version
     %line search for gamma_k
 %     gamma=0;
@@ -456,7 +457,8 @@ while check==0 % iteration loop
 
 end
     
-I_shar=max(co_I); % get the output redundancy from the max of the coI_q
+%I_shar=max(co_I); % get the output redundancy from the max of the coI_q
+I_shar=co_I; % get the output redundancy from the last coI_q
     
 I_xz=0;
 for i=1:dimx%x
