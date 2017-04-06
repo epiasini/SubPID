@@ -1,4 +1,5 @@
 import numpy as np
+from cvxopt import matrix, solvers
 
 def I_2D(q_xy):
     """Compute mutual information I(X:Y) from Q(X,Y), where Q must be
@@ -106,13 +107,119 @@ def lin_pid(p, accuracy, method, lin_accuracy):
 
             for ix in range(dimx-1):
                 for iy in range(dimy-1):
-                    # set constraints for the top-left entries q[0,0,iz]
                     if ix==0 and iy==0:
-                        A[count, ix*(dimy-1)+iy] = -1;
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1;
-                        
-                        b[count] = p[ix,iy,iz];
-                        b[count+dimx*dimy] = 1-p[ix,iy,iz];
-                        
-                        count=count+1;
+                        # set constraints for the top-left entries q[0,0,iz]
+                        A[count, ix*(dimy-1)+iy] = -1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                        b[count] = p[ix,iy,iz]
+                        b[count+dimx*dimy] = 1-p[ix,iy,iz]
+                        count += 1
             
+                    if ix==dimx-2 and iy==dimy-2:
+                        # bottom right entries
+                        A[count, ix*(dimy-1)+iy] = -1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                        b[count] = p[ix+1,iy+1,iz]
+                        b[count+dimx*dimy] = 1-p[xx+1,yy+1,zz]
+                        count += 1
+                        
+                    if xx==0 and yy==dimy-2:
+                        # top right entries
+                        A[count, ix*(dimy-1)+iy] = 1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy]=-1
+                        b[count] = p[ix,iy+1,iz]
+                        b[count+ceil(dimx*dimy)) = 1-p[ix,iy+1,iz]
+                        count += 1
+                        
+                    if xx==dimx-2 and iy==0:
+                        # bottom left entries
+                        A[count, ix*(dimy-1)+iy] = 1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                        b[count] = p[ix+1,iy,iz]
+                        b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
+                        count += 1
+
+                    if ix==0 and dimy>2 and iy<dimy-2:
+                        # top row entries, from left to right
+                        A[count, ix*(dimy-1)+iy] = 1
+                        A[count, ix*(dimy-1)+iy+1] = -1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy+1] = 1
+                        b[count] = p[ix,iy+1,iz]
+                        b[count+dimx*dimy] = 1-p[ix,iy+1,iz]
+                        count += 1
+
+                    if iy==0 and dimx>2 and ix<dimx-2:
+                        # left-most column, top-down
+                        A[count, ix*(dimy-1)+iy]=1
+                        A[count, (ix+1)*(dimy-1)+iy]=-1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                        A[count+dimx*dimy, (ix+1)*(dimy-1)+iy] = 1
+                        b[count] = p[ix+1,iy,iz]
+                        b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
+                        count += 1
+
+                    if iy==dimy-2 and dimx>2 and ix<dimx-2:
+                        # right-most column, top-down
+                        A[count, ix*(dimy-1)+iy] = -1
+                        A[count, (ix+1)*(dimy-1)+iy] = 1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                        A[count+dimx*dimy, (ix+1)*(dimy-1)+iy) = -1
+                        b[count] = p[ix+1,iy+1,iz]
+                        b[count+dimx*dimy] = 1-p[ix+1,iy+1,iz]
+                        count +=1
+
+                    if dimx>2 and dimy>2 and 0<ix<=dimx-2 and 0<iy<=dimy-2:
+                        # internal
+                        A[count, ix*(dimy-1)+iy] = -1
+                        A[count, (ix-1)*(dimy-1)+iy] = 1
+                        A[count, ix*(dimy-1)+iy-1] = 1;
+                        A[count, (ix-1)*(dimy-1)+iy-1] = -1;
+                        
+                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                        A[count+dimx*dimy, (ix-1)*(dimy-1)+iy] = -1
+                        A[count+dimx*dimy, ix*(dimy-1)+iy-1] = -1
+                        A[count+dimx*dimy, (ix-1)*(dimy-1)+iy-1] = 1
+
+                        b[count] = p[ix,iy,iz]
+                        b[count+dimx*dimy] = 1-p[ix,iy,iz]
+                        count += 1
+
+            # extract the portion of deriv pertaining to iz and adapt
+            # deriv_iz to the multiplication deriv_iz*coeff
+            deriv_zz = deriv[:,:,zz].flatten()
+
+            if method=='cvx':
+                raise NotImplementedError('CVX not yet implemented!')
+            elif method=='glpk':
+                coeff = solvers.lp(matrix(deriv_zz), matrix(A), matrix(b))
+
+            coeff_tot(:,iz) = coeff
+
+        coeff_tot = coeff_tot.flatten()
+
+
+        p_k = p[:]
+
+        for ind_gamma in range(dimz*(dimx-1)*(dimy-1)):
+            ix = np.mod(ind_gamma/(dimy-1), dimx-1) + 1
+            iy = np.mod(ind_gamma, dimy-1) + 1
+            iz = ind_gamma/((dimx-1)*(dimy-1))
+            p_k = p_k + coeff_tot(ind_gamma)*GAMMA(:,:,:,ix,iy,iz)
+      
+        # TODO: check this wrt matlab
+        deriv = np.transpose(deriv, axes=(2,1,3)).flatten('F')
+        
+        #set the stopping criterion based on the duality gap, see Stratos;
+        if iteration>0 and np.dot(deriv,coeff_prev-coeff_tot)<=accuracy:
+            done = True # exit the algorithm
+            q_opt = q # output the optimal distribution
+        else:
+            # fixed increment; simplest version of Franke-Wolf
+            gamma_k = 2/(iteationr+2)
+            # update the q for next iteration
+            q = q + gamma_k*(p_k-q)
+            # update coeff_prev for next i
+            coeff_prev = coeff_prev + gamma_k*(coeff_tot-coeff_prev)
+
+        
