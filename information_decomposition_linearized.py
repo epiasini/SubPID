@@ -30,10 +30,16 @@ def I_3D_cond_z(q_xyz):
     table[np.logical_not(np.isfinite(table))] = 0
     return table.sum()    
 
-def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
+def lin_pid(p, accuracy=0.01, solver='ECOS', verbose=False):
 
     # work out dimensionality of the input probability distribution
     (dimx, dimy, dimz) = p.shape
+
+    # select appropriate LP solver
+    if solver=='CVXOPT':
+        solver = cvxpy.CVXOPT
+    elif solver=='ECOS':
+        solver = cvxpy.ECOS
 
     # Following Bertschinger2013, define a set of Gamma matrices that
     # forms a basis of the optimization domain. All Gammas have the
@@ -61,11 +67,14 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
     parameters = np.zeros((dimz*(dimx-1)*(dimy-1), 1))
 
     # starting point of the algorithm
-    q = p[:]
-    coeff_prev = parameters[:]
+    q = p.copy()
+    coeff_prev = parameters.copy()
 
-    
-
+    # create contraint definitions
+    b = np.zeros((dimz, 2*dimx*dimy,1))
+    A = np.zeros((dimz, 2*dimx*dimy, (dimx-1)*(dimy-1)))
+    for iz in range(dimz):
+        A[iz,:,:], b[iz,:,:] = define_constraints(p, iz)
  
     while not done:
         # compute derivative of MI_q along the basis vectors
@@ -79,6 +88,10 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
 
         # get rid of nonsense values of deriv coming from finite numerical precision
         deriv[np.logical_not(np.isfinite(deriv))] = 0
+        # check for bad starting point where deriv==0
+        if np.all(deriv==0):
+            deriv = 1e-9*(np.random.random(deriv.shape)-1)
+        
     
         # stores the coefficients of the q of the current
         # iteration. For each value of z there is a coeff, then
@@ -86,113 +99,20 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
         coeff_tot = np.zeros(((dimx-1)*(dimy-1), dimz))
 
         for iz in range(dimz):
-            
-            # the constraints on q, for each z, are implemented via the inequality A*coeff<=b
-            b = np.zeros((2*dimx*dimy,1))
-            A = np.zeros((2*dimx*dimy, (dimx-1)*(dimy-1)))
-
-            # the number of constraints to be imposed
-            count = 0
-
-            for ix in range(dimx-1):
-                for iy in range(dimy-1):
-                    if ix==0 and iy==0:
-                        # set constraints for the top-left entries q[0,0,iz]
-                        A[count, ix*(dimy-1)+iy] = -1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
-                        b[count] = p[ix,iy,iz]
-                        b[count+dimx*dimy] = 1-p[ix,iy,iz]
-                        count += 1
-            
-                    if ix==dimx-2 and iy==dimy-2:
-                        # bottom right entries
-                        A[count, ix*(dimy-1)+iy] = -1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
-                        b[count] = p[ix+1,iy+1,iz]
-                        b[count+dimx*dimy] = 1-p[ix+1,iy+1,iz]
-                        count += 1
-                        
-                    if ix==0 and iy==dimy-2:
-                        # top right entries
-                        A[count, ix*(dimy-1)+iy] = 1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy]=-1
-                        b[count] = p[ix,iy+1,iz]
-                        b[count+dimx*dimy] = 1-p[ix,iy+1,iz]
-                        count += 1
-                        
-                    if ix==dimx-2 and iy==0:
-                        # bottom left entries
-                        A[count, ix*(dimy-1)+iy] = 1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
-                        b[count] = p[ix+1,iy,iz]
-                        b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
-                        count += 1
-
-                    if ix==0 and dimy>2 and iy<dimy-2:
-                        # top row entries, from left to right
-                        A[count, ix*(dimy-1)+iy] = 1
-                        A[count, ix*(dimy-1)+iy+1] = -1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy+1] = 1
-                        b[count] = p[ix,iy+1,iz]
-                        b[count+dimx*dimy] = 1-p[ix,iy+1,iz]
-                        count += 1
-
-                    if iy==0 and dimx>2 and ix<dimx-2:
-                        # left-most column, top-down
-                        A[count, ix*(dimy-1)+iy]=1
-                        A[count, (ix+1)*(dimy-1)+iy]=-1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
-                        A[count+dimx*dimy, (ix+1)*(dimy-1)+iy] = 1
-                        b[count] = p[ix+1,iy,iz]
-                        b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
-                        count += 1
-
-                    if iy==dimy-2 and dimx>2 and ix<dimx-2:
-                        # right-most column, top-down
-                        A[count, ix*(dimy-1)+iy] = -1
-                        A[count, (ix+1)*(dimy-1)+iy] = 1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
-                        A[count+dimx*dimy, (ix+1)*(dimy-1)+iy] = -1
-                        b[count] = p[ix+1,iy+1,iz]
-                        b[count+dimx*dimy] = 1-p[ix+1,iy+1,iz]
-                        count +=1
-
-                    if dimx>2 and dimy>2 and 0<ix<=dimx-2 and 0<iy<=dimy-2:
-                        # internal
-                        A[count, ix*(dimy-1)+iy] = -1
-                        A[count, (ix-1)*(dimy-1)+iy] = 1
-                        A[count, ix*(dimy-1)+iy-1] = 1;
-                        A[count, (ix-1)*(dimy-1)+iy-1] = -1;
-                        
-                        A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
-                        A[count+dimx*dimy, (ix-1)*(dimy-1)+iy] = -1
-                        A[count+dimx*dimy, ix*(dimy-1)+iy-1] = -1
-                        A[count+dimx*dimy, (ix-1)*(dimy-1)+iy-1] = 1
-
-                        b[count] = p[ix,iy,iz]
-                        b[count+dimx*dimy] = 1-p[ix,iy,iz]
-                        count += 1
-
             # extract the portion of deriv pertaining to iz and adapt
             # deriv_iz to the multiplication deriv_iz*coeff
             deriv_iz = deriv[:,:,iz].reshape((-1,1), order='C')
 
-            if method=='cvx':
-                raise NotImplementedError('CVX not yet implemented!')
-            elif method=='glpk':
-                x = cvxpy.Variable(deriv_iz.size)
-                obj = cvxpy.Minimize(deriv_iz.T*x)
-                constraints = [A*x<=b]
-                prob = cvxpy.Problem(obj, constraints)
-                prob.solve(verbose=verbose)
-
-            coeff_tot[:,iz] = prob.value
+            x = cvxpy.Variable(deriv_iz.size)
+            obj = cvxpy.Minimize(deriv_iz.T*x)
+            constraints = [A[iz,:,:]*x<=(b[iz,:].reshape(-1,1))]
+            prob = cvxpy.Problem(obj, constraints)
+            prob.solve(solver=solver, verbose=verbose)
+            coeff_tot[:,iz] = x.value.T
 
         coeff_tot = coeff_tot.reshape((-1,1), order='F')
 
-
-        p_k = p[:]
+        p_k = p.copy()
         for ind_gamma in range((dimx-1)*(dimy-1)*dimz):
             ix = np.mod(ind_gamma/(dimy-1), dimx-1).astype(np.int)
             iy = np.mod(ind_gamma, dimy-1).astype(np.int)
@@ -205,7 +125,7 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
         deriv = np.transpose(deriv, axes=(1,0,2)).reshape((-1,1), order='F')
         
         #set the stopping criterion based on the duality gap, see Stratos;
-        if iteration>100:#iteration>0 and np.dot(deriv.T,coeff_prev-coeff_tot)<=accuracy:
+        if (iteration>0 and np.dot(deriv.T,coeff_prev-coeff_tot)<=accuracy) or iteration > 500:
             print(iteration)
             done = True # exit the algorithm
         else:
@@ -223,7 +143,7 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
         q[q<0] = 0
         
 
-
+    print(np.all(q==p))
     # compute co-information for optimal distribution:
     # coI_q(X:Y:Z)=I_q(X:Y)-I_q(X:Y|Z)
     # co-information
@@ -249,3 +169,96 @@ def lin_pid(p, accuracy=0.01, method='glpk', verbose=False):
     CI = I_xy_z - UI_X - UI_Y - SI
 
     return SI, CI, UI_X, UI_Y
+
+
+def define_constraints(p, iz):
+    dimx, dimy, dimz = p.shape
+
+    # the constraints on q, for each z, are implemented via the inequality A*coeff<=b
+    b = np.zeros((2*dimx*dimy,1))
+    A = np.zeros((2*dimx*dimy, (dimx-1)*(dimy-1)))
+
+    # the number of constraints to be imposed
+    count = 0
+
+    for ix in range(dimx-1):
+        for iy in range(dimy-1):
+            if ix==0 and iy==0:
+                # set constraints for the top-left entries q[0,0,iz]
+                A[count, ix*(dimy-1)+iy] = -1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                b[count] = p[ix,iy,iz]
+                b[count+dimx*dimy] = 1-p[ix,iy,iz]
+                count += 1
+
+            if ix==dimx-2 and iy==dimy-2:
+                # bottom right entries
+                A[count, ix*(dimy-1)+iy] = -1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                b[count] = p[ix+1,iy+1,iz]
+                b[count+dimx*dimy] = 1-p[ix+1,iy+1,iz]
+                count += 1
+
+            if ix==0 and iy==dimy-2:
+                # top right entries
+                A[count, ix*(dimy-1)+iy] = 1
+                A[count+dimx*dimy, ix*(dimy-1)+iy]=-1
+                b[count] = p[ix,iy+1,iz]
+                b[count+dimx*dimy] = 1-p[ix,iy+1,iz]
+                count += 1
+
+            if ix==dimx-2 and iy==0:
+                # bottom left entries
+                A[count, ix*(dimy-1)+iy] = 1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                b[count] = p[ix+1,iy,iz]
+                b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
+                count += 1
+
+            if ix==0 and dimy>2 and iy<dimy-2:
+                # top row entries, from left to right
+                A[count, ix*(dimy-1)+iy] = 1
+                A[count, ix*(dimy-1)+iy+1] = -1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                A[count+dimx*dimy, ix*(dimy-1)+iy+1] = 1
+                b[count] = p[ix,iy+1,iz]
+                b[count+dimx*dimy] = 1-p[ix,iy+1,iz]
+                count += 1
+
+            if iy==0 and dimx>2 and ix<dimx-2:
+                # left-most column, top-down
+                A[count, ix*(dimy-1)+iy]=1
+                A[count, (ix+1)*(dimy-1)+iy]=-1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = -1
+                A[count+dimx*dimy, (ix+1)*(dimy-1)+iy] = 1
+                b[count] = p[ix+1,iy,iz]
+                b[count+dimx*dimy] = 1-p[ix+1,iy,iz]
+                count += 1
+
+            if iy==dimy-2 and dimx>2 and ix<dimx-2:
+                # right-most column, top-down
+                A[count, ix*(dimy-1)+iy] = -1
+                A[count, (ix+1)*(dimy-1)+iy] = 1
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                A[count+dimx*dimy, (ix+1)*(dimy-1)+iy] = -1
+                b[count] = p[ix+1,iy+1,iz]
+                b[count+dimx*dimy] = 1-p[ix+1,iy+1,iz]
+                count +=1
+
+            if dimx>2 and dimy>2 and 0<ix<=dimx-2 and 0<iy<=dimy-2:
+                # internal
+                A[count, ix*(dimy-1)+iy] = -1
+                A[count, (ix-1)*(dimy-1)+iy] = 1
+                A[count, ix*(dimy-1)+iy-1] = 1;
+                A[count, (ix-1)*(dimy-1)+iy-1] = -1;
+
+                A[count+dimx*dimy, ix*(dimy-1)+iy] = 1
+                A[count+dimx*dimy, (ix-1)*(dimy-1)+iy] = -1
+                A[count+dimx*dimy, ix*(dimy-1)+iy-1] = -1
+                A[count+dimx*dimy, (ix-1)*(dimy-1)+iy-1] = 1
+
+                b[count] = p[ix,iy,iz]
+                b[count+dimx*dimy] = 1-p[ix,iy,iz]
+                count += 1
+
+    return A, b
