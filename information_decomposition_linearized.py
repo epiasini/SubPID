@@ -1,5 +1,5 @@
 import numpy as np
-from cvxopt import matrix, solvers
+import glpk
 
 def I_2D(q_xy):
     """Compute mutual information I(X:Y) from Q(X,Y), where Q must be
@@ -27,10 +27,9 @@ def I_3D_cond_z(q_xyz):
     q_xy_z = q_xyz / q_z
     with np.errstate(divide='ignore', invalid='ignore'):
         table = q_xyz * np.log2(q_xy_z/(q_x_z*q_y_z))
-    return table[table>0].sum()
-    
+    return table[table>0].sum()    
 
-def lin_pid(p, accuracy, method, lin_accuracy):
+def lin_pid(p, accuracy=0.01, method='glpk'):
 
     # work out dimensionality of the input probability distribution
     (dimx, dimy, dimz) = p.shape
@@ -66,19 +65,6 @@ def lin_pid(p, accuracy, method, lin_accuracy):
 
  
     while not done:
-        # get rid of tiny negative entries in q ehich result from
-        # limited numerical precision
-        q[q<0] = 0
-        
-        # compute I_q(X:Y)
-        I_xy = I_2D(q.sum(axis=2))
-
-        # compute I_q(X:Y|Z)
-        I_cond_xy_z = I_3D_cond_z(q)
-
-        # co-information
-        co_I = I_xy - I_cond_xy_z
-
         # compute derivative of MI_q along the basis vectors
         deriv = np.log2(q[:-1,:-1]*q[1:,1:]) - \
                 np.log2(q[:-1,1:]*q[1:,:-1]) + \
@@ -187,16 +173,20 @@ def lin_pid(p, accuracy, method, lin_accuracy):
 
             # extract the portion of deriv pertaining to iz and adapt
             # deriv_iz to the multiplication deriv_iz*coeff
-            deriv_zz = deriv[:,:,zz].flatten()
+            deriv_zz = deriv[:,:,zz].reshape((-1,1), order='C')
 
             if method=='cvx':
                 raise NotImplementedError('CVX not yet implemented!')
             elif method=='glpk':
-                coeff = solvers.lp(matrix(deriv_zz), matrix(A), matrix(b))
+                x = glpk.Variable(deriv_zz.size)
+                obj = glpk.Minimize(deriv_zz.T*x)
+                constraints = A*x<=b
+                prob = glpk.Problem(obj, constraints)
+                prob.solve(solver=glpk.GLPK, verbose=True)
 
-            coeff_tot(:,iz) = coeff
+            coeff_tot(:,iz) = prob.value
 
-        coeff_tot = coeff_tot.flatten()
+        coeff_tot = coeff_tot.reshape((-1,1), order='F')
 
 
         p_k = p[:]
@@ -207,8 +197,10 @@ def lin_pid(p, accuracy, method, lin_accuracy):
             iz = ind_gamma/((dimx-1)*(dimy-1))
             p_k = p_k + coeff_tot(ind_gamma)*GAMMA(:,:,:,ix,iy,iz)
       
-        # TODO: check this wrt matlab
-        deriv = np.transpose(deriv, axes=(2,1,3)).flatten('F')
+        # this is supposed to build a concatenated array where the
+        # forst block corresponds to deriv_zz for zz=0, the second
+        # corresponds to deriv_zz for zz=1, etc
+        deriv = np.transpose(deriv, axes=(1,0,2)).reshape((-1,1), order='F')
         
         #set the stopping criterion based on the duality gap, see Stratos;
         if iteration>0 and np.dot(deriv,coeff_prev-coeff_tot)<=accuracy:
@@ -222,4 +214,40 @@ def lin_pid(p, accuracy, method, lin_accuracy):
             # update coeff_prev for next i
             coeff_prev = coeff_prev + gamma_k*(coeff_tot-coeff_prev)
 
+
+        # update entropies
+        # TODO: no need to re-compute entropies at each step, one could just update the distribution
         
+        # get rid of tiny negative entries in q ehich result from
+        # limited numerical precision
+        q[q<0] = 0
+        
+        # compute I_q(X:Y)
+        I_xy = I_2D(q.sum(axis=2))
+
+        # compute I_q(X:Y|Z)
+        I_cond_xy_z = I_3D_cond_z(q)
+
+        # co-information
+        co_I = I_xy - I_cond_xy_z
+
+
+
+        
+    # get the output redundancy from the last coI_q and use it to compute the decomposition
+    SI = co_I
+
+    I_xz = I_2D(p.sum(axis=1))
+    I_yz = I_2D(p.sum(axis=0))
+    I_xy_z = I_2D(p.reshape((dimx*dimy,dimz)))
+
+    # first output unique
+    UI_X = I_xz - SI
+    
+    # second output unique
+    UI_Y = I_yz - SI
+
+    # output synergy
+    CI = I_xy_z - UI_X - UI_Y - SI
+
+    return SI, CI, UI_X, UI_Y
