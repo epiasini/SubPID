@@ -3,12 +3,37 @@ function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,met
 %inputs: discrete 3-variate probability distribution p, its dimensions dimx, dimy, dimz, an upper bound on the desired accuracy of the outputs (in bit)
 %method: - 'cvx' if you want to use cvx - more reliable numerical result but much slower
          %- 'linprog' if you want to use the matlab function linprog - less reliable numerical result (in high dimensions) but faster
+         % - 'glpk' the best yet
 %outputs: the 4 PID atoms of I_shar (redundancy SI(Z:{X;Y})), I_unx (UI(Z:X\Y)), I_uny (UI(Z:Y\X)), I_syn (synergy CI(Z:{X;Y})). Thus, Z is the target and X, Y are the sources.
 
 %close all
 
-tic
-
+        
+if dimx==1 
+    
+    p23 = reshape(p(1,:,:),dimy,dimz);
+    I_yz = p23 .* log2(p23 ./ repmat(sum(p23), [dimy 1]) ./ repmat(sum(p23,2), [1 dimz]));
+    I_yz = sum(I_yz(p23 > 0));
+    
+    I_shar=0;
+    I_syn=0;
+    I_unx=0;
+    I_uny=I_yz;
+    q_opt=1;
+    
+elseif dimy==1
+    
+    p13 = reshape(p(:,1,:),dimx,dimz);
+    I_xz = p13 .* log2(p13 ./ repmat(sum(p13), [dimx 1]) ./ repmat(sum(p13,2), [1 dimz]));
+    I_xz = sum(I_xz(p13 > 0));
+    
+    I_shar=0;
+    I_syn=0;
+    I_unx=I_xz;
+    I_uny=0;
+    q_opt=1;
+    
+else
 
 GAMMA=zeros(dimx,dimy,dimz,dimx-1,dimy-1,dimz); % this is the concatenation of all the (dimx-1)*(dimy-1)*(dimz) Gamma matrices defined in Bertschinger2013, each of which has
                                                   %the same dimensions (dimx, dimy, dimz) as the input p.
@@ -55,7 +80,7 @@ while check==0 % iteration loop
     I_cond_xy_z = sum(I_cond_xy_z(q > 0));
 
      %co_I=[co_I;I_xy-I_cond_xy_z]; % update coI_q
-      co_I=  I_xy-I_cond_xy_z;%to make it faster
+     co_I=  I_xy-I_cond_xy_z;%to make it faster
 
     %Franke-Wolf optimization algorithm
     %1) determine search direction
@@ -64,13 +89,13 @@ while check==0 % iteration loop
 
     %deriv=zeros(dimx-1,dimy-1,dimz);
 
-    %for zz=1:dimz
-     %   for xx=1:dimx-1
-      %      for yy=1:dimy-1
-       %         deriv(xx,yy,zz)=log2(q(xx,yy,zz)*q(xx+1,yy+1,zz))-log2(q(xx,yy+1,zz)*q(xx+1,yy,zz))+log2(sum(q(xx,yy+1,:)).*sum(q(xx+1,yy,:)))-log2(sum(q(xx,yy,:)).*sum(q(xx+1,yy+1,:)));
-        %    end
-       % end
-    %end
+%     for zz=1:dimz
+%        for xx=1:dimx-1
+%            for yy=1:dimy-1
+%                deriv(xx,yy,zz)=log2(q(xx,yy,zz)*q(xx+1,yy+1,zz))-log2(q(xx,yy+1,zz)*q(xx+1,yy,zz))+log2(sum(q(xx,yy+1,:)).*sum(q(xx+1,yy,:)))-log2(sum(q(xx,yy,:)).*sum(q(xx+1,yy+1,:)));
+%            end
+%        end
+%     end
 
     deriv = log2(q(1:dimx-1,1:dimy-1,:) .* q(2:dimx,2:dimy,:)) - ...
             log2(q(1:dimx-1,2:dimy,:) .* q(2:dimx,1:dimy-1,:)) + ...
@@ -253,6 +278,8 @@ while check==0 % iteration loop
                         
                     %problem = struct();%use with parfor
                         
+              
+                    
                     problem.f=deriv_zz;
                     problem.Aineq=A;
                     problem.bineq=b;
@@ -276,9 +303,26 @@ while check==0 % iteration loop
                     elseif isequal(method,'glpk') 
                                                                         
                         %param.dual=1;
-                        param.lpsolver=2;
-                    coeff = glpk (deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
-
+                        
+                      % param = sdpsettings('verbose',0,'solver','GLPK'); % GLPK is selected as the solver
+                       param.lpsolver=2;%Interior point method. The simplex method called with param.lpsolver=1 or 3 doesn't work as well. 
+                       param.msglev=0;
+                       param.itcnt=10^10;
+                       param.mpsobj=0;
+                       param.mpsinfo=0;
+                       
+                       %param.scale=3; % doesn't change things
+                       %param.dual=1; % doesn't change things
+                       %param.presol=0;% doesn't change things
+                       %param.branch=3;% doesn't change things
+                       %param.pprocess=0;% doesn't change things
+                       %param.usecuts=5;% doesn't change things
+                       %param.binarize=1;% doesn't change things
+                       
+                       warning off;
+                       
+                       coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
+                    
                     elseif isequal(method,'lpsolve')
                         
                     coeff = lp_solve(deriv_zz,A,b,repmat(-1,1,length(b)),repmat(-1,1,length(deriv_zz)));%,vlb,vub,xint,scalemode,keep)    
@@ -286,7 +330,7 @@ while check==0 % iteration loop
                 end
 
                 coeff_tot(:,zz)=coeff;% update coeff_tot with the coeff from the current zz
-
+                
     end
            
     coeff_tot=coeff_tot(:);
@@ -315,7 +359,9 @@ while check==0 % iteration loop
        deriv=deriv(:)';
         
     %set the stopping criterion based on the duality gap, see Stratos;
-    if iter>0 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
+    %iter must be larger than 1 because sometimes deriv takes 2 iters to
+    %get different than zero, which is always its initial value.
+    if iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
 
         check=1; %exit the algorithm
         q_opt=q; % output the optimal distribution
@@ -326,7 +372,9 @@ while check==0 % iteration loop
     
         q=q+gamma_k*(p_k-q); % update the q for next iteration
 
-        coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  % update coeff_prev for next iteration
+        coeff_prev=coeff_tot;% update coeff_prev for next iteration
+        %coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  %before I was doing
+        %this, but I think it is wrong.
 
         %coeff_tot_prev=coeff_tot;
 % first alternative Franke-Wolf increment: line search. Pretty primitive version
@@ -459,6 +507,10 @@ end
     
 %I_shar=max(co_I); % get the output redundancy from the max of the coI_q
 I_shar=co_I; % get the output redundancy from the last coI_q
+
+if I_shar<0
+    keyboard
+end
     
 I_xz=0;
 for i=1:dimx%x
@@ -502,7 +554,6 @@ end
 
 I_syn=I_xy_z-I_xz-I_yz+I_shar;%output synergy
 
-
-toc
+end
 
 end
