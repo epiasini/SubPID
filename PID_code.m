@@ -508,9 +508,9 @@ end
 %I_shar=max(co_I); % get the output redundancy from the max of the coI_q
 I_shar=co_I; % get the output redundancy from the last coI_q
 
-if I_shar<0
-    keyboard
-end
+%if I_shar<0
+%    keyboard
+%end
     
 I_xz=0;
 for i=1:dimx%x
