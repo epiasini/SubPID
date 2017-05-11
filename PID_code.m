@@ -372,8 +372,8 @@ while check==0 % iteration loop
     
         q=q+gamma_k*(p_k-q); % update the q for next iteration
 
-        coeff_prev=coeff_tot;% update coeff_prev for next iteration
-        %coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  %before I was doing
+        %coeff_prev=coeff_tot;% update coeff_prev for next iteration
+        coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  %before I was doing
         %this, but I think it is wrong.
 
         %coeff_tot_prev=coeff_tot;
