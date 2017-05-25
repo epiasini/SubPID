@@ -1,4 +1,4 @@
-function coeff = glpk_mwrap(c, A, b, ctype, sense, param)
+function solution_coords = glpk_mwrap(c, A, b, ctype, sense, param)
     
     [n_constraints, n_vars] = size(A);
     ctype_map = {'<=', '=', '>='};
@@ -74,10 +74,19 @@ function coeff = glpk_mwrap(c, A, b, ctype, sense, param)
     fclose(fid);
     
     %% call standalone glpk
-    command = sprintf('glpsol --lp problem.test.lp -w solution.test');
+    command = sprintf('glpsol --interior --lp problem.test.lp -w solution.test');
     system(command);
     
     %% read back results
-    
-    coeff = 0;
+    fid = fopen('solution.test', 'r');
+    tline = fgetl(fid);
+    solution_coords = NaN(n_vars, 1);
+    while ischar(tline)
+        if tline(1)=='j'
+            scanned = textscan(tline, 'j %d %*s %f %*f');
+            solution_coords(scanned{1}) = scanned{2};
+        end
+        tline = fgetl(fid);
+    end
+    fclose(fid);
 end
