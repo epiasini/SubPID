@@ -1,4 +1,4 @@
-function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,method,lin_accuracy)
+function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(p,accuracy,method,lin_accuracy)
 
 %inputs: discrete 3-variate probability distribution p, its dimensions dimx, dimy, dimz, an upper bound on the desired accuracy of the outputs (in bit)
 %method: - 'cvx' if you want to use cvx - more reliable numerical result but much slower
@@ -7,7 +7,7 @@ function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(dimx,dimy,dimz,p,accuracy,met
 %outputs: the 4 PID atoms of I_shar (redundancy SI(Z:{X;Y})), I_unx (UI(Z:X\Y)), I_uny (UI(Z:Y\X)), I_syn (synergy CI(Z:{X;Y})). Thus, Z is the target and X, Y are the sources.
 
 %close all
-
+[dimx, dimy, dimz] = size(p);
         
 if dimx==1 
     
