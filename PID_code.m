@@ -310,6 +310,7 @@ while check==0 % iteration loop
                        param.itcnt=10^10;
                        param.mpsobj=0;
                        param.mpsinfo=0;
+                       param.save=1;
                        
                        %param.scale=3; % doesn't change things
                        %param.dual=1; % doesn't change things
@@ -321,7 +322,11 @@ while check==0 % iteration loop
                        
                        warning off;
                        
+                       coeff = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, param);
+                       
                        coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
+                       command = sprintf('glpsol --lp outpb.lp -w solution');
+                       system(command);
                     
                     elseif isequal(method,'lpsolve')
                         
