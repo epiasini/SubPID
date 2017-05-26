@@ -322,11 +322,9 @@ while check==0 % iteration loop
                        
                        warning off;
                        
-                       coeff_wrap = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, param);
+                       coeff_wrap = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, 'interior');
                        
                        coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
-                       command = sprintf('glpsol --interior --lp outpb.lp -w solution');
-                       system(command);
                     
                     elseif isequal(method,'lpsolve')
                         
