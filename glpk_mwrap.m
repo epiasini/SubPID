@@ -19,6 +19,12 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
             scan_string = 'j %d %f %*f';
     end
     
+    if isunix
+        pipe_string = '> /dev/null 2>&1';
+    else
+        pipe_string = '>nul 2>nul';
+    end
+    
     %% objective description string
     % (note we're goint to a new line at each variable because of the
     % limitation on max line length)
@@ -85,7 +91,7 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
     
     %% call standalone glpk
     solution_file_name = tempname;
-    command = sprintf('glpsol --%s --lp %s -w %s', method, problem_file_name, solution_file_name);
+    command = sprintf('glpsol --%s --lp %s -w %s %s', method, problem_file_name, solution_file_name, pipe_string);
     system(command);
     
     %% read back results
