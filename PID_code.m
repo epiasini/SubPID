@@ -325,7 +325,7 @@ while check==0 % iteration loop
                        coeff_wrap = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, param);
                        
                        coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
-                       command = sprintf('glpsol --lp outpb.lp -w solution');
+                       command = sprintf('glpsol --interior --lp outpb.lp -w solution');
                        system(command);
                     
                     elseif isequal(method,'lpsolve')

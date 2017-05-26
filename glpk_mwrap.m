@@ -83,7 +83,7 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, param)
     solution_coords = NaN(n_vars, 1);
     while ischar(tline)
         if tline(1)=='j'
-            scanned = textscan(tline, 'j %d %*s %f %*f');
+            scanned = textscan(tline, 'j %d %f %*f'); % note that the formatting string has to be 'j %d %*s %f %*f' if using simplex method
             solution_coords(scanned{1}) = scanned{2};
         end
         tline = fgetl(fid);
