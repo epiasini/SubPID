@@ -86,12 +86,12 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
     %% assemble problem description
     problem_file_name = tempname;
     fid = fopen(problem_file_name,'wt');
-    fprintf(fid, '%s\n%s\n%s', objective, constraints, bounds);
+    fprintf(fid, '%s\n%s\n%s\nEnd\n', objective, constraints, bounds);
     fclose(fid);
     
     %% call standalone glpk
     solution_file_name = tempname;
-    command = sprintf('glpsol --%s --lp %s -w %s %s', method, problem_file_name, solution_file_name, pipe_string);
+    command = sprintf('/home/eugenio/src/glpk-4.45/examples/glpsol --%s --lp %s -w %s %s', method, problem_file_name, solution_file_name, pipe_string);
     system(command);
     
     %% read back results
