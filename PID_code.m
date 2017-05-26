@@ -322,16 +322,16 @@ while check==0 % iteration loop
                        
                        warning off;
                        
-                       coeff_wrap = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, 'interior');
+                       coeff = glpk_mwrap(deriv_zz, A, b, repmat('U',1,length(b)), 1, 'interior');
                        
-                       coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
+                       %coeff = glpk(deriv_zz, A, b, [], [], repmat('U',1,length(b)), repmat('C',1,length(deriv_zz)), 1,param);
                     
                     elseif isequal(method,'lpsolve')
                         
                     coeff = lp_solve(deriv_zz,A,b,repmat(-1,1,length(b)),repmat(-1,1,length(deriv_zz)));%,vlb,vub,xint,scalemode,keep)    
                     
                 end
-
+                
                 coeff_tot(:,zz)=coeff;% update coeff_tot with the coeff from the current zz
                 
     end
