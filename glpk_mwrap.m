@@ -78,16 +78,18 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
     bounds = strjoin([header_bounds, bound_components], '\n ');
     
     %% assemble problem description
-    fid = fopen('problem.test.lp','wt');
+    problem_file_name = tempname;
+    fid = fopen(problem_file_name,'wt');
     fprintf(fid, '%s\n%s\n%s', objective, constraints, bounds);
     fclose(fid);
     
     %% call standalone glpk
-    command = sprintf('glpsol --%s --lp problem.test.lp -w solution.test', method);
+    solution_file_name = tempname;
+    command = sprintf('glpsol --%s --lp %s -w %s', method, problem_file_name, solution_file_name);
     system(command);
     
     %% read back results
-    fid = fopen('solution.test', 'r');
+    fid = fopen(solution_file_name, 'r');
     tline = fgetl(fid);
     solution_coords = NaN(n_vars, 1);
     while ischar(tline)
@@ -98,4 +100,8 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
         tline = fgetl(fid);
     end
     fclose(fid);
+    
+    %% clean up temporary files
+    delete(problem_file_name);
+    delete(solution_file_name);
 end
