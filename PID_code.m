@@ -81,6 +81,10 @@ while check==0 % iteration loop
 
      %co_I=[co_I;I_xy-I_cond_xy_z]; % update coI_q
      co_I=  I_xy-I_cond_xy_z;%to make it faster
+	
+     if iter==0
+         co_I_in=co_I;
+     end	
 
     %Franke-Wolf optimization algorithm
     %1) determine search direction
@@ -372,132 +376,8 @@ while check==0 % iteration loop
     
         q=q+gamma_k*(p_k-q); % update the q for next iteration
 
-        %coeff_prev=coeff_tot;% update coeff_prev for next iteration
-        coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);  %before I was doing
-        %this, but I think it is wrong.
-
-        %coeff_tot_prev=coeff_tot;
-% first alternative Franke-Wolf increment: line search. Pretty primitive version
-    %line search for gamma_k
-%     gamma=0;
-%     I_cond_xy_z_prev=I_cond_xy_z;
-%     
-%     while gamma<1 %gamma=1 just gives you p_k again
-%     
-%     q_search=q+gamma*(p_k-q);    
-%         
-%        I_cond_xy_z=0;
-% %conditional mutual info
-%         for i=1:dimx%x
-%            for k=1:dimy%y
-%              for j=1:dimz%z
-%                 if q_search(i,k,j)>0
-%                    I_cond_xy_z=I_cond_xy_z+q_search(i,k,j)*log2(q_search(i,k,j)/sum(sum(q_search(:,:,j)))/(sum(q_search(i,:,j))/sum(sum(q_search(:,:,j)))*sum(q_search(:,k,j))/sum(sum(q_search(:,:,j)))));
-%                 end
-%              end
-%            end
-%         end   
-%         
-%        if  I_cond_xy_z>I_cond_xy_z_prev
-%            gamma_k=gamma;
-%            gamma=1;
-%            I_cond_xy_z_prev=I_cond_xy_z;
-%        end
-%         
-%     gamma=gamma+0.01;    
-%     end    
-%         
-%     q=q+gamma_k*(p_k-q); %because I started with iter=0
-%      
-%     coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev);        
-
-
-
-% second alternative Franke-Wolf increment: away steps. Pretty primitive version
-%      v_value_max=0;%    dot(deriv,parameters);
-%      v_t=1;
-%      for ss=2:size(S_t,2)
-%          if v_value_max<dot(deriv,S_t(:,ss))
-%              v_value_max=dot(deriv,S_t(:,ss));
-%              v_t=ss;
-%          end
-%      end
-% 
-%      if dot(deriv,coeff_prev-coeff_tot)>=dot(deriv,S_t(:,v_t)-coeff_prev)
-%          dir=coeff_tot-coeff_prev;
-%          gamma_max=1;
-%      else
-%          dir=-S_t(:,v_t)+coeff_prev;
-%          alpha_v_t=dot(coeff_prev,S_t(:,v_t));
-%          gamma_max=alpha_v_t/(1-alpha_v_t);
-%      end
-%      
-%         %line search for gamma_k
-%     gamma=0;
-%     I_cond_xy_z_prev=I_cond_xy_z;
-%     
-%     vec_dir=p;    
-%         for ind_gamma=1:ceil(dimz*(dimx-1)*(dimy-1))
-%            
-%             xx=mod(ceil(ind_gamma/(dimy-1))-1,dimx-1)+1;
-%             yy=mod(ind_gamma-1,dimy-1)+1;
-%             zz=ceil(ind_gamma/((dimx-1)*(dimy-1)));
-%             
-%             
-%             vec_dir=vec_dir+dir(ind_gamma,1).*GAMMA(:,:,:,xx,yy,zz);
-% 
-%         end
-%     
-%     
-%     while gamma<=gamma_max
-%        
-%     q_search=q+gamma*(vec_dir);    
-%         
-%        I_cond_xy_z=0;
-% %conditional mutual info
-%         for i=1:dimx%x
-%            for k=1:dimy%y
-%              for j=1:dimz%z
-%                 if q_search(i,k,j)>0
-%                    I_cond_xy_z=I_cond_xy_z+q_search(i,k,j)*log2(q_search(i,k,j)/sum(sum(q_search(:,:,j)))/(sum(q_search(i,:,j))/sum(sum(q_search(:,:,j)))*sum(q_search(:,k,j))/sum(sum(q_search(:,:,j)))));
-%                 end
-%              end
-%            end
-%         end   
-%         
-%        if  I_cond_xy_z>I_cond_xy_z_prev
-%            gamma_k=gamma;
-%            gamma=1;
-%            I_cond_xy_z_prev=I_cond_xy_z;
-%        end
-%        
-%      if gamma_max>0   
-%     gamma=gamma+gamma_max/1000;    
-%      else
-%          gamma=gamma+0.1;
-%      end
-%             
-%             
-%     end    
-%         
-%     
-% 
-%     q=q+gamma_k*(vec_dir); %because I started with iter=0
-%      
-%     coeff_prev=coeff_prev+gamma_k*(dir);        
-%     
-%     if gamma_k==1
-%     S_t=[coeff_tot];
-%     else
-%     S_t=[S_t,coeff_tot];    
-%     end
-% 
-%     if gamma_k==gamma_max
-%     S_t(:,v_t)=[];
-%     else
-%     end
-%         
         
+        coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev); % update coeff_prev for next iteration
         
         iter=iter+1;
     
@@ -505,13 +385,12 @@ while check==0 % iteration loop
 
 end
     
-%I_shar=max(co_I); % get the output redundancy from the max of the coI_q
 I_shar=co_I; % get the output redundancy from the last coI_q
 
-%if I_shar<0
-%    keyboard
-%end
-    
+while I_shar<co_I_in-accuracy
+   [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code_line_search(p,accuracy,method,lin_accuracy);
+end
+
 I_xz=0;
 for i=1:dimx%x
     for j=1:dimz%z
