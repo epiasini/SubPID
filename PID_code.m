@@ -388,7 +388,7 @@ end
 I_shar=co_I; % get the output redundancy from the last coI_q
 
 while I_shar<co_I_in-accuracy
-   [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code_line_search(p,accuracy,method,lin_accuracy);
+   [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code_line_search(q_opt,accuracy,method,lin_accuracy);
 end
 
 I_xz=0;
