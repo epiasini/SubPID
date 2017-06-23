@@ -1,4 +1,29 @@
-function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(p,accuracy,method,lin_accuracy)
+function [I_shar,I_syn,I_unx,I_uny,q_opt]=pid(p,accuracy,method,lin_accuracy)
+    % PID    Partial Information Decomposition of a trivariate probability
+    % distribution.
+    % 
+    % [I_shar, I_syn, I_unx, I_uny] = pid(p) gives the four atoms of the
+    % partial information decomposition following the proposal by
+    % Bertschinger et al. (2013).
+    %
+    % p must be a three-dimensional array representing the joint
+    % probability distribution p(x,y,z) of the three discrete variables X,
+    % Y and Z. The values assumed by X, Y and Z are implicitly mapped to
+    % indices such that, for instance, p(1,3,2) is the probability of
+    % X=1,Y=3,Z=2, and so on.
+    %
+    % [I_shar, I_syn, I_unx, I_uny] are the atoms of the PID:
+    %
+    % I_shar = SI(Z:{X;Y})  (shared information, or redundancy, between X
+    % and Y about X)
+    %
+    % I_syn = CI(Z:{X,Y})   (complementary information, or synergy, between
+    % X and Y about Z)
+    % 
+    % I_unx = UI(Z:{X\Y})   (unique information in X about Z)
+    %
+    % I_uny = UI(Z:{Y\Z})   (unique information in Y about Z)
+    
 
 %inputs: discrete 3-variate probability distribution p, its dimensions dimx, dimy, dimz, an upper bound on the desired accuracy of the outputs (in bit)
 %method: - 'cvx' if you want to use cvx - more reliable numerical result but much slower
@@ -6,7 +31,6 @@ function [I_shar,I_syn,I_unx,I_uny,q_opt]=PID_code(p,accuracy,method,lin_accurac
          % - 'glpk' the best yet
 %outputs: the 4 PID atoms of I_shar (redundancy SI(Z:{X;Y})), I_unx (UI(Z:X\Y)), I_uny (UI(Z:Y\X)), I_syn (synergy CI(Z:{X;Y})). Thus, Z is the target and X, Y are the sources.
 
-%close all
 [dimx, dimy, dimz] = size(p);
         
 if dimx==1 
