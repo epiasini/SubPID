@@ -98,10 +98,16 @@ function solution_coords = glpk_mwrap(c, A, b, ctype, sense, method)
     fid = fopen(solution_file_name, 'r');
     tline = fgetl(fid);
     solution_coords = NaN(n_vars, 1);
+    idx = 0;
     while ischar(tline)
-        if tline(1)=='j'
-            scanned = textscan(tline, scan_string);
-            solution_coords(scanned{1}) = scanned{2};
+        idx = idx+1;
+        if idx==1
+            line_dims = sscanf(tline, '%d');
+        end
+        if idx>2+line_dims(1)
+            %scanned = textscan(tline, scan_string);
+            scanned = sscanf(tline, '%f');
+            solution_coords(idx-(2+line_dims(1))) = scanned(1);
         end
         tline = fgetl(fid);
     end
