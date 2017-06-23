@@ -3,7 +3,7 @@ SubPID - Subatomic Partial Information Decomposition
 
 This package is composed by two parts:
 
-- A MATLAB implementation of the positive information decomposition
+- A MATLAB implementation of the partial information decomposition
   (PID) for distributions over three random variables using the
   definitions from Bertschinger, N., Rauh, J., Olbrich, E., Jost, J.,
   and Ay, N. /Quantifying unique information./ Entropy,
