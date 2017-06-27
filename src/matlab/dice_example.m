@@ -87,7 +87,7 @@ while aa<=ceil(1/lambdastep)+1 % loop over different correlations between the di
     
     %[I_shar(aa),I_syn(aa),I_unx(aa),I_uny(aa),q_1]=PID_code(dimz,dimy,dimx,p,0.01,'cvx',10^-3);
     
-    [I_shar(aa),I_syn(aa),I_unx(aa),I_uny(aa),q_1]=PID_code(p,accuracy,'glpk',0);
+    [I_shar(aa),I_syn(aa),I_unx(aa),I_uny(aa),q_1]=pid(p,accuracy,'glpk',0);
     
     %[I_shar(aa),I_syn(aa),I_unx(aa),I_uny(aa),q_1]=PID_code(dimz,dimy,dimx,p,accuracy,'lpsolve',0);
     
@@ -100,7 +100,7 @@ toc
    %[I_shar_z(aa),I_syn_z(aa),I_unx_z(aa),I_uny_z(aa),q_3]=PID_code(dimz_z,dimy_z,dimx_z,p_z,0.01,'cvx',10^-3);
         %or use 'cvx' as the solving method
 
-   [I_shar_z(aa),I_syn_z(aa),I_unx_z(aa),I_uny_z(aa),q_3]=PID_code(p_z,accuracy,'glpk',0.);
+   [I_shar_z(aa),I_syn_z(aa),I_unx_z(aa),I_uny_z(aa),q_3] = pid(p_z,accuracy,'glpk',0.);
     
     %[I_shar_z(aa),I_syn_z(aa),I_unx_z(aa),I_uny_z(aa),q_3]=PID_code(dimz_z,dimy_z,dimx_z,p_z,accuracy,'lpsolve',0.);
    
