@@ -1,5 +1,5 @@
-SubPID - Subatomic Partial Information Decomposition
-=========================
+# SubPID - Subatomic Partial Information Decomposition
+
 
 This package is composed by two parts:
 
@@ -16,17 +16,21 @@ This package is composed by two parts:
   2017.
   
 
-Installing
-----------
+## Installing
+
+### Matlab
+
+You will require [glpkmex](https://github.com/blegat/glpkmex).
+
+## Usage
+
+### Matlab
+
+The main function you're probably interested in is
+`src/matlab/subatomic_pid.m`. See the function description for details.
 
 
-Usage
------
-
-
-
-License
--------
-
-Upon publication, this program will be licensed under version 3 of the
-GPL or any later version. See COPYING for details.
+## License
+	
+This program is licensed under the GNU General Public License, version
+3, or any later version. See COPYING for details.
