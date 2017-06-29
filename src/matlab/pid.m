@@ -334,56 +334,56 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
                 if line_search==0
                     %fixed increment
                     gamma_k=2/(iter+2);% this is the simplest version of Franke-Wolf algorithm, I have implemented several others below and I want to test them better
-                
+                    
                 else
-                   % increment optimized with a line-search
-                
+                    % increment optimized with a line-search
+                    
                     gamma=0;
                     gamma_k=0;
                     q(q<0)=0;
-      
+                    
                     q12 = sum(q, 3);
                     I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
                     I_xy = sum(I_xy(q12 > 0));
-         
+                    
                     %       I_q(X:Y|Z)
                     I_cond_xy_z = q .* log2(q ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ./ ...
-                    ( repmat(sum(q,2), [1 dimy 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) .* ...
-                     repmat(sum(q),   [dimx 1 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ) );
+                        ( repmat(sum(q,2), [1 dimy 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) .* ...
+                        repmat(sum(q),   [dimx 1 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ) );
                     I_cond_xy_z = sum(I_cond_xy_z(q > 0));
- 
+                    
                     co_I_prev=I_xy-I_cond_xy_z;
-      
+                    
                     while gamma<1 %gamma=1 just gives you p_k again
-
-                        q_search=q+gamma*(p_k-q);    
+                        
+                        q_search=q+gamma*(p_k-q);
                         q_search(q_search<0)=0;
- 
+                        
                         q12 = sum(q_search, 3);
                         I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
                         I_xy = sum(I_xy(q12 > 0));
-         
+                        
                         %       I_q(X:Y|Z)
                         I_cond_xy_z = q_search .* log2(q_search ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) ./ ...
-                        ( repmat(sum(q_search,2), [1 dimy 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) .* ...
-                        repmat(sum(q_search),   [dimx 1 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) ) );
+                            ( repmat(sum(q_search,2), [1 dimy 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) .* ...
+                            repmat(sum(q_search),   [dimx 1 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) ) );
                         I_cond_xy_z = sum(I_cond_xy_z(q_search > 0));
-        
+                        
                         co_I_search=I_xy-I_cond_xy_z;
-         
+                        
                         if  co_I_search>co_I_prev
-           
+                            
                             gamma_k=gamma;
                             gamma=1;
                             co_I_prev=co_I_search;
                         end
-         
-                    gamma=gamma+0.01;    
-    
-                    end    
-    
+                        
+                        gamma=gamma+0.01;
+                        
+                    end
+                    
                 end
-
+                
                 q=q+gamma_k*(p_k-q); % update the q for next iteration
                 
                 coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev); % update coeff_prev for next iteration
