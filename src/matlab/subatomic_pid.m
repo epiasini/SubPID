@@ -1,4 +1,4 @@
-function out = split_PID_measures(p)
+function out = subatomic_pid(p)
     % SUBATOMIC_PID(p) subatomic partial information decomposition of a trivariate probability distribution.
     % 
     % Calculates the atomic and subatomic information-theoretic measures of
