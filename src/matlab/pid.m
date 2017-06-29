@@ -31,8 +31,9 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
     [dimx, dimy, dimz] = size(p);
 
     % harcoded parameters - only change if you know what you're doing
-    accuracy = 0.01;
+    accuracy = 0.001;
     glpk_verbosity = 0; % set to 0 to suppress all output from glpk.
+    line_search=0; % the increment is optimized with a line-search only if necessary: the code below automatically sets line_search=1 when needed
     
     if dimx==1
         
@@ -316,13 +317,74 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
                 
                 check=1; %exit the algorithm
                 q_opt=q; % output the optimal distribution
+                
+                if co_I<co_I_in-accuracy
+                    
+                    %the fixed-increment algorithm has underestimated I_shar
+                    check=0;
+                    % thus, try another version of the algorithm where the increment is optimized with a line search
+                    line_search=1;
+                    % reset the algorithm to the initial starting point
+                    q=p;
+                
+                end
+                
             else
                 
-                %fixed increment
-                gamma_k=2/(iter+2);% this is the simplest version of Franke-Wolf algorithm, I have implemented several others below and I want to test them better
+                if line_search==0
+                    %fixed increment
+                    gamma_k=2/(iter+2);% this is the simplest version of Franke-Wolf algorithm, I have implemented several others below and I want to test them better
                 
+                else
+                   % increment optimized with a line-search
+                
+                    gamma=0;
+                    gamma_k=0;
+                    q(q<0)=0;
+      
+                    q12 = sum(q, 3);
+                    I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
+                    I_xy = sum(I_xy(q12 > 0));
+         
+                    %       I_q(X:Y|Z)
+                    I_cond_xy_z = q .* log2(q ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ./ ...
+                    ( repmat(sum(q,2), [1 dimy 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) .* ...
+                     repmat(sum(q),   [dimx 1 1]) ./ repmat(sum(sum(q), 2), [dimx dimy 1]) ) );
+                    I_cond_xy_z = sum(I_cond_xy_z(q > 0));
+ 
+                    co_I_prev=I_xy-I_cond_xy_z;
+      
+                    while gamma<1 %gamma=1 just gives you p_k again
+
+                        q_search=q+gamma*(p_k-q);    
+                        q_search(q_search<0)=0;
+ 
+                        q12 = sum(q_search, 3);
+                        I_xy = q12 .* log2(q12 ./ repmat(sum(q12), [dimx 1]) ./ repmat(sum(q12,2), [1 dimy]));
+                        I_xy = sum(I_xy(q12 > 0));
+         
+                        %       I_q(X:Y|Z)
+                        I_cond_xy_z = q_search .* log2(q_search ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) ./ ...
+                        ( repmat(sum(q_search,2), [1 dimy 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) .* ...
+                        repmat(sum(q_search),   [dimx 1 1]) ./ repmat(sum(sum(q_search), 2), [dimx dimy 1]) ) );
+                        I_cond_xy_z = sum(I_cond_xy_z(q_search > 0));
+        
+                        co_I_search=I_xy-I_cond_xy_z;
+         
+                        if  co_I_search>co_I_prev
+           
+                            gamma_k=gamma;
+                            gamma=1;
+                            co_I_prev=co_I_search;
+                        end
+         
+                    gamma=gamma+0.01;    
+    
+                    end    
+    
+                end
+
                 q=q+gamma_k*(p_k-q); % update the q for next iteration
-                
                 
                 coeff_prev=coeff_prev+gamma_k*(coeff_tot-coeff_prev); % update coeff_prev for next iteration
                 
@@ -334,9 +396,9 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
         
         I_shar=co_I; % get the output redundancy from the last coI_q
         
-        while I_shar<co_I_in-accuracy
-            [I_shar,~,~,~,q_opt]=PID_code_line_search(p,accuracy,method,lin_accuracy);
-        end
+        %while I_shar<co_I_in-accuracy
+        %    [I_shar,~,~,~,q_opt]=pid(p);
+        %end
         
         I_xz=0;
         for i=1:dimx%x
