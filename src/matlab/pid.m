@@ -312,7 +312,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
             %set the stopping criterion based on the duality gap, see Stratos;
             %iter must be larger than 1 because sometimes deriv takes 2 iters to
             %get different than zero, which is always its initial value.
-            if iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)
+            if (iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy) ) || (line_search==1 && max(abs(coeff_prev))<=accuracy)
                 
                 check=1; %exit the algorithm
                 q_opt=q; % output the optimal distribution
