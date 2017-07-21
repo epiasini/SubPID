@@ -32,7 +32,10 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
     % harcoded parameters - only change if you know what you're doing
     accuracy = 0.001;
     glpk_verbosity = 0; % set to 0 to suppress all output from glpk.
-    line_search=0; % the increment is optimized with a line-search only if necessary: the code below automatically sets line_search=1 when needed
+    line_search=0; % the increment is optimized with a line-search
+                   % only if necessary: the code below
+                   % automatically sets line_search=1 when needed
+    iter_limit = 10^4;
     
     if dimx==1
         
@@ -312,7 +315,8 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
             %set the stopping criterion based on the duality gap, see Stratos;
             %iter must be larger than 1 because sometimes deriv takes 2 iters to
             %get different than zero, which is always its initial value.
-            if (iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy) ) || (line_search==1 && iter>10^4)
+            if (iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)) ...
+                    || iter>iter_limit
                 
                 check=1; %exit the algorithm
                 q_opt=q; % output the optimal distribution
