@@ -6,11 +6,10 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     S_values=unique(S);
     C_values=unique(C);
     
-    N_bins=length(R_values);
+    N_r=length(R_values);
     N_s=length(S_values);
     N_c=length(C_values);
     
-    eps=10^-(17);
     idx=randperm(ntr);
     ntr2=floor(ntr/2);
     ntr4=floor(ntr/4);
@@ -48,11 +47,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     C_44=C(r44);
     
     
-    p_src_21=zeros(N_bins,2);
+    p_src_21=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_21(ss,rr,cc)=sum( (R_21==R_values(rr)).* (S_21==S_values(ss)).* (C_21==C_values(cc)));
             end
         end
@@ -61,11 +60,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     p_src_21=p_src_21/sum(p_src_21(:));
     
     
-    p_src_22=zeros(N_bins,2);
+    p_src_22=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_22(ss,rr,cc)=sum( (R_22==R_values(rr)).* (S_22==S_values(ss)).* (C_22==C_values(cc)));
             end
         end
@@ -94,11 +93,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     
     
     
-    p_src_41=zeros(N_bins,2);
+    p_src_41=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_41(ss,rr,cc)=sum( (R_41==R_values(rr)).* (S_41==S_values(ss)).* (C_41==C_values(cc)));
             end
         end
@@ -106,11 +105,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     %
     p_src_41=p_src_41/sum(p_src_41(:));
     
-    p_src_42=zeros(N_bins,2);
+    p_src_42=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_42(ss,rr,cc)=sum( (R_42==R_values(rr)).* (S_42==S_values(ss)).* (C_42==C_values(cc)));
             end
         end
@@ -118,11 +117,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     %
     p_src_42=p_src_42/sum(p_src_42(:));
     
-    p_src_43=zeros(N_bins,2);
+    p_src_43=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_43(ss,rr,cc)=sum( (R_43==R_values(rr)).* (S_43==S_values(ss)).* (C_43==C_values(cc)));
             end
         end
@@ -130,11 +129,11 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     %
     p_src_43=p_src_43/sum(p_src_43(:));
     
-    p_src_44=zeros(N_bins,2);
+    p_src_44=zeros(N_s,N_r,N_c);
     
     for cc=1:N_c
         for ss=1:N_s
-            for rr=1:N_bins
+            for rr=1:N_r
                 p_src_44(ss,rr,cc)=sum( (R_44==R_values(rr)).* (S_44==S_values(ss)).* (C_44==C_values(cc)));
             end
         end
