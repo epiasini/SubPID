@@ -3,13 +3,14 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
     % 
     % [I_shar, I_syn, I_unx, I_uny] = pid(p) gives the four atoms of the
     % partial information decomposition following the proposal by
-    % Bertschinger et al. (2013).
+    % Bertschinger et al. (2014).
     %
     % p must be a three-dimensional array representing the joint
-    % probability distribution p(x,y,z) of the three discrete variables X,
-    % Y and Z. The values assumed by X, Y and Z are implicitly mapped to
-    % indices such that, for instance, p(1,3,2) is the probability of
-    % X=1,Y=3,Z=2, and so on.
+    % probability distribution p(x,y,z) of the three discrete
+    % variables X, Y and Z. Z is the target variable. The values
+    % assumed by X, Y and Z are implicitly mapped to indices such
+    % that, for instance, p(1,3,2) is the probability of X=1,Y=3,Z=2,
+    % and so on.
     %
     % [I_shar, I_syn, I_unx, I_uny] are the atoms of the PID:
     %
@@ -24,7 +25,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
     % I_uny = UI(Z:{Y\Z})   (unique information in Y about Z)
     %
     % q_opt is the probability distribution that solves the optimization
-    % problem defined in Bertschinger et al 2013, which is used to compute
+    % problem defined in Bertschinger et al 2014, which is used to compute
     % the quantities above.
     
     [dimx, dimy, dimz] = size(p);
