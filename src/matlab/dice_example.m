@@ -1,4 +1,4 @@
-function dice_example
+function [I_shar_z, RSI_x_y_z, IRSI_x_y_z] = dice_example()
 
 tic
 
