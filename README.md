@@ -1,5 +1,9 @@
 # SubPID - Subatomic Partial Information Decomposition
 
+
+[![DOI](https://zenodo.org/badge/61385385.svg)](https://zenodo.org/badge/latestdoi/61385385)
+
+
 This package is composed by two parts:
 
 - A MATLAB implementation of the partial information decomposition
