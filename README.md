@@ -1,8 +1,6 @@
 # SubPID - Subatomic Partial Information Decomposition
 
-
 [![DOI](https://zenodo.org/badge/61385385.svg)](https://zenodo.org/badge/latestdoi/61385385)
-
 
 This package is composed by two parts:
 
@@ -12,9 +10,10 @@ This package is composed by two parts:
   and Ay, N. *Quantifying unique information.* Entropy,
   16(4):2161–2183, 2014.
 - A MATLAB numerical implementation of the subatomic partial
-  information decomposition proposed in Pica et al, *Invariant
-  components of synergy, redundancy, and unique information among
-  three variables.*, to appear in Entropy,
+  information decomposition proposed in Pica, G., Piasini, E.,
+  Chicharro, D., and Panzeri, S. *Invariant Components of Synergy,
+  Redundancy, and Unique Information Among Three Variables.*, to
+  appear in Entropy,
   [arXiv:1706.08921 \[cs.IT\]](https://arxiv.org/abs/1706.08921),
   2017.
 
