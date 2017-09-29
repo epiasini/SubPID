@@ -1,4 +1,4 @@
-function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
+function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected, iters)
     
     ntr = numel(R);
     
@@ -9,6 +9,10 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     N_r=length(R_values);
     N_s=length(S_values);
     N_c=length(C_values);
+    
+    I_II_corr_iter=[];
+    
+for iter=1:iters
     
     idx=randperm(ntr);
     ntr2=floor(ntr/2);
@@ -185,6 +189,10 @@ function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected)
     I_II_4=(I_II_41+I_II_42+I_II_43+I_II_44)/4;
     I_II_2=(I_II_21+I_II_22)/2;
     
-    I_II_corr=lagrange_vec([1/ntr4 1/ntr2 1/ntr],[I_II_4 I_II_2 I_II_non_corrected]);
+    I_II_corr_iter=[I_II_corr_iter; lagrange_vec([1/ntr4 1/ntr2 1/ntr],[I_II_4 I_II_2 I_II_non_corrected])];
+    
+end
+
+I_II_corr=mean(I_II_corr_iter);
     
 end
