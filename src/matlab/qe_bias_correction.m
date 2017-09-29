@@ -1,4 +1,4 @@
-function [h0]=qe_bias_correction(S,R)
+function [h0]=qe_bias_correction(S,R, iters)
  
     eps=10^-(17);
     
@@ -9,7 +9,10 @@ function [h0]=qe_bias_correction(S,R)
     N_bins=length(R_values);
     N_s=length(S_values);
     
-
+h0_iter=[];
+    
+for iter=1:iters
+    
     idx=randperm(ntr);
     ntr2=floor(ntr/2);
     ntr4=floor(ntr/4);
@@ -183,7 +186,10 @@ function [h0]=qe_bias_correction(S,R)
     h4=(h41+h42+h43+h44)/4;
     h2=(h21+h22)/2;
     
-    h0=lagrange_vec([1/ntr4 1/ntr2 1/ntr],[h4 h2 hdt]);
+    h0_iter=[h0_iter; lagrange_vec([1/ntr4 1/ntr2 1/ntr],[h4 h2 hdt])];
     
+end
+   
+h0=mean(h0_iter);
     
 end
