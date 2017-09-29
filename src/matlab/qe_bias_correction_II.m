@@ -1,5 +1,9 @@
 function [I_II_corr]=qe_bias_correction_II(S,R,C,I_II_non_corrected, iters)
     
+    if nargin<3
+        iters = 1;
+    end
+    
     ntr = numel(R);
     
     R_values=unique(R);

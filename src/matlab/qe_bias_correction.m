@@ -2,6 +2,10 @@ function [h0]=qe_bias_correction(S,R, iters)
  
     eps=10^-(17);
     
+    if nargin<3
+        iters = 1;
+    end
+    
     ntr = max(numel(S), numel(R)); % we look at the max because the function can take a scalar instead of one of the argument to indicate that we want a marginal entropy instead of a joint entropy
     R_values=unique(R);
     S_values=unique(S);
