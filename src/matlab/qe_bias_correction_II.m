@@ -81,21 +81,21 @@ for iter=1:iters
     p_src_22=p_src_22/sum(p_src_22(:));
     
     
-    [I,II,III,IIII]=pid(p_src_21);
+    [I,II,III,IIII]=partial_info_dec(p_src_21);
     
     p_s_2=permute(p_src_21,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_21=min(I,I_s);
     
     
     
-    [I,II,III,IIII]=pid(p_src_22);
+    [I,II,III,IIII]=partial_info_dec(p_src_22);
     
     p_s_2=permute(p_src_22,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_22=min(I,I_s);
     
@@ -151,39 +151,39 @@ for iter=1:iters
     
     
     
-    [I,II,III,IIII]=pid(p_src_41);
+    [I,II,III,IIII]=partial_info_dec(p_src_41);
     
     p_s_2=permute(p_src_41,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_41=min(I,I_s);
     
     
-    [I,II,III,IIII]=pid(p_src_42);
+    [I,II,III,IIII]=partial_info_dec(p_src_42);
     
     p_s_2=permute(p_src_42,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_42=min(I,I_s);
     
     
     
-    [I,II,III,IIII]=pid(p_src_43);
+    [I,II,III,IIII]=partial_info_dec(p_src_43);
     
     p_s_2=permute(p_src_43,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_43=min(I,I_s);
     
     
-    [I,II,III,IIII]=pid(p_src_44);
+    [I,II,III,IIII]=partial_info_dec(p_src_44);
     
     p_s_2=permute(p_src_44,[3 2 1]);
     %
-    [I_s,II_s,III_s,IIII_s]=pid(p_s_2);
+    [I_s,II_s,III_s,IIII_s]=partial_info_dec(p_s_2);
     
     I_II_44=min(I,I_s);
     
