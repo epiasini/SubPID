@@ -1,7 +1,7 @@
-function [I_shar, I_syn, I_unx, I_uny, q_opt] = pid(p)
-    % PID(p) Partial Information Decomposition of a trivariate probability distribution.
+function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
+    % partial_info_dec(p) Partial Information Decomposition of a trivariate probability distribution.
     % 
-    % [I_shar, I_syn, I_unx, I_uny] = pid(p) gives the four atoms of the
+    % [I_shar, I_syn, I_unx, I_uny] = partial_info_dec(p) gives the four atoms of the
     % partial information decomposition following the proposal by
     % Bertschinger et al. (2014).
     %
