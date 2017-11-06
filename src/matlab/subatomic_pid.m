@@ -39,9 +39,9 @@ function out = subatomic_pid(p)
     
     out = struct();
     
-    [out.SI_x, out.CI_x, out.UI_x_z, out.UI_x_y] = pid(permute(p,[3 2 1]));
-    [out.SI_y, out.CI_y, out.UI_y_x, out.UI_y_z] = pid(permute(p,[1 3 2]));
-    [out.SI_z, out.CI_z, out.UI_z_x, out.UI_z_y] = pid(p);
+    [out.SI_x, out.CI_x, out.UI_x_z, out.UI_x_y] = partial_info_dec(permute(p,[3 2 1]));
+    [out.SI_y, out.CI_y, out.UI_y_x, out.UI_y_z] = partial_info_dec(permute(p,[1 3 2]));
+    [out.SI_z, out.CI_z, out.UI_z_x, out.UI_z_y] = partial_info_dec(p);
         
     out.RSI_x = min(out.SI_z, out.SI_y);
     out.RSI_y = min(out.SI_z, out.SI_x);
