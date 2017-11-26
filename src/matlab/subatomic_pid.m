@@ -2,10 +2,10 @@ function out = subatomic_pid(p)
     % SUBATOMIC_PID(p) subatomic partial information decomposition of a trivariate probability distribution.
     % 
     % Calculates the atomic and subatomic information-theoretic measures of
-    % all three PID lattices of a system (X,Y,Z), as defined in Pica et al,
-    % 2017, "Invariant components of synergy, redundancy, and unique
-    % information among three variables"
-    % (https://arxiv.org/abs/1706.08921).
+    % all three PID lattices of a system of three stochastic variables (X,Y,Z), 
+    % as defined in Pica et al, 2017, Entropy 19(9):451, 
+    % "Invariant components of synergy, redundancy, and unique information 
+    % among three variables".
     %
     % p must be a three-dimensional array representing the joint
     % probability distribution p(x,y,z) of the three discrete variables X,
