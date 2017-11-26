@@ -8,6 +8,13 @@ function [I_II, S_R_info, C_R_info, S_C_info, non_readout_sensory_info, internal
 % Information Processing, 3687-3697, "Quantifying how much sensory information in
 % a neural code is relevant for behavior".
 
+% The definition of II also defines immediately the leftover information components:
+% I(S:R)-II is sensory information that is not readout for behavior, "non_readout_sensory_info"
+% I(R:C)-II is choice information that is not related to the stimulus, "internal_choice_info"
+% I(S:C)-II is correspondence between stimulus and choice that is due to other neural responses 
+% than the observed R, "S_C_info_from_unobserverd_R" 
+
+
 % Inputs:
 % p_src is a n_stimuli X n_response_values X n_choices array of the 
 % empirical joint probability distribution p(s,r,c) estimated from 
