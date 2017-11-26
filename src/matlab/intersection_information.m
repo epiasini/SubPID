@@ -5,7 +5,7 @@ function [I_II, S_R_info, C_R_info, S_C_info, non_readout_sensory_info, internal
 % dataset where the experimenter recorded, in each of n_trial trials, the stimulus S, some neural feature R, and the choice C.
 % 
 % The information-theoretic intersection information II is defined and described in Pica et al (2017), Advances in Neural
-% Information Processing, "Quantifying how much sensory information in
+% Information Processing, 3687-3697, "Quantifying how much sensory information in
 % a neural code is relevant for behavior".
 
 % Inputs:
