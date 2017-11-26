@@ -30,7 +30,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
     
     [dimx, dimy, dimz] = size(p);
 
-    % harcoded parameters - only change if you know what you're doing
+    % hardcoded parameters - only change if you know what you're doing
     accuracy = 0.001;
     glpk_verbosity = 0; % set to 0 to suppress all output from glpk.
     line_search=0; % the increment is optimized with a line-search
@@ -66,7 +66,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
         
     else
         
-        GAMMA=zeros(dimx,dimy,dimz,dimx-1,dimy-1,dimz); % this is the concatenation of all the (dimx-1)*(dimy-1)*(dimz) Gamma matrices defined in Bertschinger2013, each of which has
+        GAMMA=zeros(dimx,dimy,dimz,dimx-1,dimy-1,dimz); % this is the concatenation of all the (dimx-1)*(dimy-1)*(dimz) Gamma matrices defined in Bertschinger2014, each of which has
         %the same dimensions (dimx, dimy, dimz) as the input p.
         
         for zz=1:dimz
@@ -87,7 +87,8 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
         
         iter=0; % counts the iterations of the algorithm
         
-        q=p; % the starting point of the algorithm is trivially set to the input p. I have tried smarter starting points but it seems the algorithm does not improve.
+        q=p; % the starting point of the algorithm is trivially set to the input p. Different, smarter starting points seem to 
+        % make little difference in terms of performance.
         
         coeff_prev=parameters';% when iter=0, the coefficients of the iteration -1 are trivially set equal to zero too.
         
@@ -129,7 +130,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
             deriv(isnan(deriv))=0;
             deriv(isinf(deriv))=0;
             
-            %stores the coefficients of the q of the current iteration. For
+            %store the coefficients of the q of the current iteration. For
             %each value of z there is a coeff, then coeff_tot concatenates
             %all coeffs.
             coeff_tot=zeros(ceil((dimx-1)*(dimy-1)),dimz);
@@ -315,7 +316,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
             
             %set the stopping criterion based on the duality gap, see Stratos;
             %iter must be larger than 1 because sometimes deriv takes 2 iters to
-            %get different than zero, which is always its initial value.
+            %become different from zero, which is always its initial value.
             if (iter>1 && (dot(deriv,coeff_prev-coeff_tot)<=accuracy)) ...
                     || iter>iter_limit
                 
@@ -339,7 +340,7 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
                 
                 if line_search==0
                     %fixed increment
-                    gamma_k=2/(iter+2);% this is the simplest version of Franke-Wolf algorithm, I have implemented several others below and I want to test them better
+                    gamma_k=2/(iter+2);% this is the simplest version of Franke-Wolf algorithm.
                     
                 else
                     % increment optimized with a line-search
@@ -402,13 +403,10 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
         
         I_shar=co_I; % get the output redundancy from the last coI_q
         
-        %while I_shar<co_I_in-accuracy
-        %    [I_shar,~,~,~,q_opt]=pid(p);
-        %end
         
         I_xz=0;
-        for i=1:dimx%x
-            for j=1:dimz%z
+        for i=1:dimx
+            for j=1:dimz
                 
                 if sum(p(i,:,j))>0
                     I_xz=I_xz+sum(p(i,:,j))*log2(sum(p(i,:,j))/(sum(sum(p(:,:,j)))*sum(sum(p(i,:,:)))));
@@ -420,8 +418,8 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
         I_unx=I_xz-I_shar;% first output unique
         
         I_yz=0;
-        for k=1:dimy%y
-            for j=1:dimz%z
+        for k=1:dimy
+            for j=1:dimz
                 
                 if sum(p(:,k,j))>0
                     I_yz=I_yz+sum(p(:,k,j))*log2(sum(p(:,k,j))/(sum(sum(p(:,:,j)))*sum(sum(p(:,k,:)))));
@@ -434,9 +432,9 @@ function [I_shar, I_syn, I_unx, I_uny, q_opt] = partial_info_dec(p)
         I_uny=I_yz-I_shar;%second output unique
         
         I_xy_z=0;
-        for i=1:dimx%x
-            for k=1:dimy%y
-                for j=1:dimz%z
+        for i=1:dimx
+            for k=1:dimy
+                for j=1:dimz
                     
                     if p(i,k,j)>0
                         I_xy_z=I_xy_z+p(i,k,j)*log2(p(i,k,j)/(sum(p(i,k,:))*sum(sum(p(:,:,j)))));
