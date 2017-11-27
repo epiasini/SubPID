@@ -40,7 +40,7 @@ The intersection information can be estimated from raw response data
 with "src/matlab/intersection information_from_binned_response.m", 
 while the more general "src/matlab/intersection information.m" should 
 be used if the user has already estimated p(s,r,c) from the experimental dataset.
-The PID and the subatomic PID are implemented by `src/matlab/pid.m`
+The PID and the subatomic PID are implemented by `src/matlab/partial_info_dec.m`
 and `src/matlab/subatomic_pid.m`, respectively. See the function
 descriptions for details.
 
