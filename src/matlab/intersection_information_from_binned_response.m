@@ -1,4 +1,4 @@
-function I_II=intersection_information_from_binned_response(S,R,C, R_bins)
+function I_II=intersection_information_from_binned_response(S,R,C, R_bins, method)
 
 % intersection_information_from_binned_response: Computes intersection information II of a perceptual discrimination
 % dataset where the experimenter recorded, in each of n_trial trials, the stimulus S, some neural feature R, and the choice C.
@@ -56,8 +56,21 @@ for cc=1:N_c
     end
 end
 %
-p_src=p_src/sum(p_src(:));
 
-I_II=intersection_information(p_src);
+% Joint probability distribution
+p_src = p_src/sum(p_src(:));
 
+
+switch method
+    
+    case 'MI'
+
+        % Compute MI between S and R, and between R and C
+        [MI_SR, MI_RC] = mutual_information(p_src);
+        
+    case 'II'
+        
+        % Compute II
+        I_II = intersection_information(p_src);
+        
 end
