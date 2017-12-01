@@ -1,5 +1,4 @@
-function [I_II, S_R_info, C_R_info, S_C_info, non_readout_sensory_info, internal_choice_info, ...
-    S_C_info_from_unobserved_R]=intersection_information(p_src)
+function out = intersection_information(p_src)
 
 % intersection_information: Computes intersection information II of a perceptual discrimination
 % dataset where the experimenter recorded, in each of n_trial trials, the stimulus S, some neural feature R, and the choice C.
@@ -24,38 +23,32 @@ function [I_II, S_R_info, C_R_info, S_C_info, non_readout_sensory_info, internal
 
 
 % compute SI(C: {S;R}), UI(C: {S\R}), UI(C: {R\S})
-[SI_c,~,~,UI_c_r]=partial_info_dec(p_src);
+[SI_c,~,~,UI_c_r] = partial_info_dec(p_src);
 
-p_crs=permute(p_src,[3 2 1]);
+p_crs = permute(p_src,[3 2 1]);
 % compute SI(S: {C;R}), UI(S:{C\R}), UI(S: {R\C})
-[SI_s,~,UI_s_c,UI_s_r]=partial_info_dec(p_crs);
+[SI_s,~,UI_s_c,UI_s_r] = partial_info_dec(p_crs);
 
 % compute final output intersection information
-I_II=min(SI_c,SI_s);
-
-
+out.I_II = min(SI_c,SI_s);
 
 % stimulus information available in the recorded neural response R
-S_R_info=SI_s+UI_s_r;
+out.S_R_info = SI_s + UI_s_r;
 
 % choice information available in the recorded neural response R
-C_R_info=SI_c+UI_c_r;
+out.C_R_info = SI_c + UI_c_r;
 
 % I(S:C), similar in spirit to behavioral performance
-S_C_info=SI_s+UI_s_c;
-
-
+out.S_C_info = SI_s + UI_s_c;
 
 % sensory information in neural response R that is not read out for behavior
-non_readout_sensory_info=S_R_info-II;
+out.non_readout_sensory_info = out.S_R_info - out.I_II;
 
 % choice information in neural response R that is not related to the stimulus
-internal_choice_info=R_C_info-II;
+out.internal_choice_info = out.C_R_info - out.I_II;
 
 % the part of I(S:C) ("behavioral performance") that cannot be explained 
 % with recorded neural feature R
-S_C_info_from_unobserved_R=S_C_info-II;
-
-
+out.S_C_info_from_unobserved_R = out.S_C_info - out.I_II;
 
 end
