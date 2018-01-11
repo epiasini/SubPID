@@ -47,14 +47,14 @@ S_C_info=SI_s+UI_s_c;
 
 
 % sensory information in neural response R that is not read out for behavior
-non_readout_sensory_info=S_R_info-II;
+non_readout_sensory_info=S_R_info-I_II;
 
 % choice information in neural response R that is not related to the stimulus
-internal_choice_info=R_C_info-II;
+internal_choice_info=C_R_info-I_II;
 
 % the part of I(S:C) ("behavioral performance") that cannot be explained 
 % with recorded neural feature R
-S_C_info_from_unobserved_R=S_C_info-II;
+S_C_info_from_unobserved_R=S_C_info-I_II;
 
 
 
